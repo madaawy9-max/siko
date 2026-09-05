@@ -23,7 +23,7 @@ const db = require('./src/database/db');
 const { createServer } = require('./src/server/server');
 
 // ==================== إعدادات النظام ====================
-const TOKEN = process.env.DISCORD_BOT_TOKEN || 'MTU0MzI3NTI0Mjc2MjQwNzk1OA.GNFV19.Ntiz5DOCLwOKszBR70FM6IjRrO9lZOo5wwEQyc';
+const TOKEN = process.env.DISCORD_BOT_TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID || '1543275242762407958';
 const PANEL_CHANNEL_ID = process.env.PANEL_CHANNEL_ID || '1545704301605945354';
 const ADMIN_PANEL_CHANNEL_ID = process.env.ADMIN_PANEL_CHANNEL_ID || '1545524543903367318';
@@ -76,6 +76,7 @@ function hasEncryptAccess(interaction) {
     const entry = encryptPermissions[interaction.user.id];
     if (!entry) return false;
     if (entry.expiresAt && Date.now() > entry.expiresAt) return false;
+    if (entry.roleId && interaction.member && !interaction.member.roles.cache.has(entry.roleId)) return false;
     return true;
 }
 
@@ -541,6 +542,8 @@ client.once(Events.ClientReady, async () => {
                 );
 
             await channel.send({
+                allowedMentions: { parse: ['everyone'] },
+                content: '@everyone',
                 flags: MessageFlags.IsComponentsV2,
                 components: [container]
             });
@@ -1123,7 +1126,23 @@ client.on('interactionCreate', async interaction => {
 
 // ==================== حذف رسائل رفع الملفات تلقائياً ====================
 // يحذف رسالة العضو بعد التأكد أن البوت استلم رابط الملف
+client.on('messageCreate', async (message) => {
+    try {
+        if (message.author.bot) return;
+        if (!message.attachments || message.attachments.size === 0) return;
 
+        const attachment = message.attachments.first();
+        if (!attachment.name || !attachment.name.toLowerCase().endsWith('.zip')) return;
+
+        console.log(`[RAVX UPLOAD] استلام ملف: ${attachment.name} من ${message.author.tag}`);
+
+        // حذف الرسالة فوراً (بعد أن أصبح الرابط محفوظاً في Discord CDN)
+        await message.delete().catch(() => {});
+
+    } catch (err) {
+        console.error('[RAVX AUTO DELETE ERROR]', err.message);
+    }
+});
 
 console.log("TOKEN CHECK:", TOKEN ? TOKEN.substring(0,10) + "..." : "MISSING");
 console.log("TOKEN LENGTH:", TOKEN?.length);
