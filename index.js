@@ -1,3 +1,10 @@
+
+// RAVX per-user session control
+const ravxUserSessions = new Map();
+
+function resetRavxUserSession(userId){
+    ravxUserSessions.delete(userId);
+}
 try { require('dotenv').config(); } catch (e) {}
 
 process.on('unhandledRejection', (reason, promise) => {
