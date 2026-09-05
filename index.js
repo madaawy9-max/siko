@@ -23,7 +23,7 @@ const db = require('./src/database/db');
 const { createServer } = require('./src/server/server');
 
 // ==================== إعدادات النظام ====================
-const TOKEN = process.env.DISCORD_BOT_TOKEN;
+const TOKEN = process.env.DISCORD_BOT_TOKEN || 'MTU0MzI3NTI0Mjc2MjQwNzk1OA.GNFV19.Ntiz5DOCLwOKszBR70FM6IjRrO9lZOo5wwEQyc';
 const CLIENT_ID = process.env.CLIENT_ID || '1543275242762407958';
 const PANEL_CHANNEL_ID = process.env.PANEL_CHANNEL_ID || '1545704301605945354';
 const ADMIN_PANEL_CHANNEL_ID = process.env.ADMIN_PANEL_CHANNEL_ID || '1545524543903367318';
@@ -76,7 +76,6 @@ function hasEncryptAccess(interaction) {
     const entry = encryptPermissions[interaction.user.id];
     if (!entry) return false;
     if (entry.expiresAt && Date.now() > entry.expiresAt) return false;
-    if (entry.roleId && interaction.member && !interaction.member.roles.cache.has(entry.roleId)) return false;
     return true;
 }
 
@@ -542,8 +541,6 @@ client.once(Events.ClientReady, async () => {
                 );
 
             await channel.send({
-                allowedMentions: { parse: ['everyone'] },
-                content: '@everyone',
                 flags: MessageFlags.IsComponentsV2,
                 components: [container]
             });
@@ -677,7 +674,6 @@ client.once(Events.ClientReady, async () => {
 });
 
 client.on('interactionCreate', async interaction => {
-    if (interaction.replied || interaction.deferred) return;
     if (interaction.isButton()) {
         const userId = interaction.user.id;
         if (!userSessionData.has(userId)) userSessionData.set(userId, {});
