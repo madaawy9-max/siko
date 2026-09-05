@@ -23,7 +23,7 @@ const db = require('./src/database/db');
 const { createServer } = require('./src/server/server');
 
 // ==================== إعدادات النظام ====================
-const TOKEN = process.env.DISCORD_BOT_TOKEN || 'MTU0MzI3NTI0Mjc2MjQwNzk1OA.GesLCh.wUCR-tU_b07K3LZNaxKOxjApR4wPxDrAbeSFis';
+const TOKEN = process.env.DISCORD_BOT_TOKEN || 'MTU0MzI3NTI0Mjc2MjQwNzk1OA.GNFV19.Ntiz5DOCLwOKszBR70FM6IjRrO9lZOo5wwEQyc';
 const CLIENT_ID = process.env.CLIENT_ID || '1543275242762407958';
 const PANEL_CHANNEL_ID = process.env.PANEL_CHANNEL_ID || '1545704301605945354';
 const ADMIN_PANEL_CHANNEL_ID = process.env.ADMIN_PANEL_CHANNEL_ID || '1545524543903367318';
@@ -32,7 +32,7 @@ const GRANT_PERMISSION_ROLE_ID = process.env.GRANT_PERMISSION_ROLE_ID || '150945
 const WEBHOOK_URL = process.env.WEBHOOK_URL || "https://discord.com/api/webhooks/1543224732806160414/UTWZ3ksAWbMI0uMyENCNT2Qh7N5ZBnmRAfkCwzQeZTW7adznDgMJNPeDsqw3ZEjFtkNH"; 
 
 const PORT = process.env.PORT || 3000;
-const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
+const BASE_URL = process.env.BASE_URL || "https://ravx.onrender.com";
 
 const BANNER_IMAGE_URL = "https://cdn.discordapp.com/attachments/1347530974971559996/1545106692285661206/ravx_logo_bannr.png?ex=6a9c41be&is=6a9af03e&hm=7bce2e840b13301cdc97aef0dd6738fc7429742431ec97c500999798d0118c43&";
 const THUMBNAIL_URL = "https://cdn.discordapp.com/attachments/1347530974971559996/1545517413678977034/RAVX_LOGO.png?ex=6a9c6ec1&is=6a9b1d41&hm=f4254219e932d39218cee412e64e1d0ae3eba0a9993d75024e7eae292972e9eb&";
@@ -1075,6 +1075,7 @@ client.on('interactionCreate', async interaction => {
                 }).catch(() => {
                     console.log(`[RAVX BOT] تعذر الإرسال للخاص للعضو ${interaction.user.tag} (الخاص مقفل)`);
                 });
+                
 
                 // تعديل الرد المباشر في الروم
                 await interaction.editReply({
@@ -1118,6 +1119,27 @@ client.on('interactionCreate', async interaction => {
     }
 });
 
-client.login(TOKEN).catch(err => {
-    console.error('❌ فشل تسجيل دخول البوت:', err.message);
+
+// ==================== حذف رسائل رفع الملفات تلقائياً ====================
+// يحذف رسالة العضو بعد التأكد أن البوت استلم رابط الملف
+client.on('messageCreate', async (message) => {
+    try {
+        if (message.author.bot) return;
+        if (!message.attachments || message.attachments.size === 0) return;
+
+        const attachment = message.attachments.first();
+        if (!attachment.name || !attachment.name.toLowerCase().endsWith('.zip')) return;
+
+        console.log(`[RAVX UPLOAD] استلام ملف: ${attachment.name} من ${message.author.tag}`);
+
+        // حذف الرسالة فوراً (بعد أن أصبح الرابط محفوظاً في Discord CDN)
+        await message.delete().catch(() => {});
+
+    } catch (err) {
+        console.error('[RAVX AUTO DELETE ERROR]', err.message);
+    }
 });
+
+console.log("TOKEN CHECK:", TOKEN ? TOKEN.substring(0,10) + "..." : "MISSING");
+console.log("TOKEN LENGTH:", TOKEN?.length);
+client.login(TOKEN);
