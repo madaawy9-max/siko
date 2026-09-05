@@ -680,20 +680,33 @@ client.once(Events.ClientReady, async () => {
 
 
 
-// ==================== Auto Delete Upload Messages ====================
+// ==================== Auto Delete Upload Messages (Fixed) ====================
 client.on('messageCreate', async (message) => {
     try {
         if (message.author.bot) return;
 
-        const hasZip = message.attachments.some(a => 
-            a.name.toLowerCase().endsWith('.zip')
+        const hasZip = message.attachments.some(a =>
+            a.name && a.name.toLowerCase().endsWith('.zip')
         );
 
-        if (hasZip) {
-            setTimeout(() => {
-                message.delete().catch(()=>{});
-            }, 1000);
-        }
+        if (!hasZip) return;
+
+        // محاولة حذف متعددة لضمان الحذف
+        const remove = async () => {
+            try {
+                if (message.deletable) {
+                    await message.delete();
+                    return;
+                }
+            } catch (e) {
+                console.error('[DELETE RETRY]', e.message);
+            }
+        };
+
+        setTimeout(remove, 500);
+        setTimeout(remove, 2000);
+        setTimeout(remove, 5000);
+
     } catch(e) {
         console.error('[DELETE ERROR]', e.message);
     }
