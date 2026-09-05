@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بوابة تحميل السكربتات | RAVX Security Systems</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Ambient background glow effects -->
+  <div class="glow-sphere sphere-1"></div>
+  <div class="glow-sphere sphere-2"></div>
+  <div class="cyber-grid"></div>
+
+  <!-- Main Container -->
+  <div class="container">
+    <!-- Navigation / Header -->
+    <header class="header">
+      <div class="brand">
+        <img src="https://cdn.discordapp.com/attachments/1347530974971559996/1545517413678977034/RAVX_LOGO.png?ex=6a9c6ec1&is=6a9b1d41&hm=f4254219e932d39218cee412e64e1d0ae3eba0a9993d75024e7eae292972e9eb&" alt="RAVX Logo" class="brand-logo" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'40\' height=\'40\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%235865F2\' stroke-width=\'2\'><path d=\'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z\'/></svg>'">
+        <div>
+          <h1 class="brand-title">RAVX NEXUS</h1>
+          <p class="brand-subtitle">نظام تحميل الموارد المشفرة والمحمية</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <span class="status-badge live">
+          <span class="pulse-dot"></span>
+          الخادم متصل
+        </span>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <main class="main-content">
+      <div class="hero-text">
+        <span class="tagline">🛡️ RAVX SECURITY PROTOCOL V7</span>
+        <h2 class="hero-title">أدخل كود التحميل واستلم سكريبتك</h2>
+        <p class="hero-desc">
+          إذا قمت بتشفير سكريبتك عبر بوت ديسكورد، أدخل الكود المكون من 9 خانات للبدء بتحميل الملف المضغوط (.ZIP) مباشرة وبأقصى سرعة.
+        </p>
+      </div>
+
+      <!-- Code Input Box -->
+      <section class="card input-card">
+        <form id="codeForm" onsubmit="event.preventDefault(); verifyCode();">
+          <label for="codeInput" class="input-label">
+            <span>🔑 كود السكربت (Script Code)</span>
+            <span class="hint">مثال: RAVX-DEMO1 أو الكود المرسل لك بالديسكورد</span>
+          </label>
+          <div class="input-group">
+            <div class="input-wrapper">
+              <input 
+                type="text" 
+                id="codeInput" 
+                placeholder="RAVX-XXXXX" 
+                maxlength="15" 
+                autocomplete="off" 
+                spellcheck="false"
+                required
+              >
+              <button type="button" class="btn-paste" id="pasteBtn" title="لصق من الحافظة">
+                📋 لصق
+              </button>
+            </div>
+            <button type="submit" class="btn-primary" id="submitBtn">
+              <span class="btn-text">فحص الكود</span>
+              <span class="btn-icon">⚡</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Quick Demo Pill -->
+        <div class="quick-demo">
+          <span>جرّب كود تجريبي:</span>
+          <button type="button" class="demo-code-pill" onclick="loadDemoCode('RAVX-DEMO1')">
+            RAVX-DEMO1
+          </button>
+        </div>
+
+        <!-- Alert / Feedback Message -->
+        <div id="statusMessage" class="status-box hidden"></div>
+      </section>
+
+      <!-- Script Result Card (Revealed on Valid Code) -->
+      <section id="scriptDetails" class="card result-card hidden">
+        <div class="result-header">
+          <div class="resource-badge">
+            <span class="resource-icon">📦</span>
+            <div>
+              <span class="meta-label">اسم المورد (Resource)</span>
+              <h3 id="resName" class="resource-title">-</h3>
+            </div>
+          </div>
+          <div class="status-pill verified">
+            <span>🛡️ تم التحقق والترخيص</span>
+          </div>
+        </div>
+
+        <div class="grid-details">
+          <div class="detail-item">
+            <span class="detail-icon">🌐</span>
+            <div>
+              <span class="detail-label">الآي بي المرخّص</span>
+              <strong id="resIp" class="detail-val font-mono">-</strong>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-icon">🔐</span>
+            <div>
+              <span class="detail-label">نمط التشفير</span>
+              <strong id="resMode" class="detail-val">-</strong>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-icon">📊</span>
+            <div>
+              <span class="detail-label">حجم الملف</span>
+              <strong id="resSize" class="detail-val">-</strong>
+            </div>
+          </div>
+
+          <div class="detail-item">
+            <span class="detail-icon">📥</span>
+            <div>
+              <span class="detail-label">مرات التحميل</span>
+              <strong id="resDownloads" class="detail-val">-</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Security Notice -->
+        <div class="security-banner">
+          <span class="sec-icon">⚠️</span>
+          <p>
+            <strong>تنبيه الأمان:</strong> هذا السكريبت مشفر ومقفل برخصة سيرفر FiveM للآي بي المذكور فقط، ولن يعمل إذا تم تغيير اسم المجلد أو تشغيله على آي بي مختلف.
+          </p>
+        </div>
+
+        <!-- Download Action Area -->
+        <div class="action-area">
+          <a id="downloadBtn" href="#" class="btn-download">
+            <span class="dl-icon">⬇️</span>
+            <div class="dl-text-wrap">
+              <span class="dl-main-text">تحميل الملف المضغوط الآن</span>
+              <span class="dl-sub-text font-mono" id="dlFileName">script.zip</span>
+            </div>
+          </a>
+          <button type="button" class="btn-secondary" id="copyShareBtn" onclick="copyDirectLink()">
+            🔗 نسخ رابط التحميل المباشر
+          </button>
+        </div>
+      </section>
+
+      <!-- Features Section -->
+      <section class="features-grid">
+        <div class="feature-box">
+          <div class="f-icon">⚡</div>
+          <h4>تحميل فوري وعالي السرعة</h4>
+          <p>تحميل مباشر بأعلى سرعة متصلة بخوادم سريعة بدون انتظار أو إعلانات مزعجة.</p>
+        </div>
+        <div class="feature-box">
+          <div class="f-icon">📁</div>
+          <h4>تجاوز حد ديسكورد (24MB)</h4>
+          <p>لا تقلق بشأن حجم المودات والملفات الضخمة؛ النظام يدعم تحميل الموارد بكل أحجامها.</p>
+        </div>
+        <div class="feature-box">
+          <div class="f-icon">🔒</div>
+          <h4>حماية وترخيص FiveM</h4>
+          <p>أمان كامل للأكواد ضد التسريب مع فحص الآي بي ومطابقة اسم المورد تلقائياً.</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-content">
+        <p>نظام RAVX-TEAM Security Systems &copy; 2026 — جميع الحقوق محفوظة.</p>
+        <div class="footer-links">
+          <a href="https://discord.com/channels/1411298467061698623/1509399450504794285" target="_blank" rel="noopener">⭐ الدعم الفني في ديسكورد</a>
+          <span>•</span>
+          <a href="https://discord.com/channels/1411298467061698623/1545526903052435476" target="_blank" rel="noopener">💎 أسعار الاشتراك</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>
