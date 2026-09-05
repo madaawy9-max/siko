@@ -541,11 +541,6 @@ client.once(Events.ClientReady, async () => {
                 );
 
             await channel.send({
-                content: '@everyone',
-                allowedMentions: { parse: ['everyone'] }
-            });
-
-            await channel.send({
                 flags: MessageFlags.IsComponentsV2,
                 components: [container]
             });
