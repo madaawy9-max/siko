@@ -680,36 +680,24 @@ client.once(Events.ClientReady, async () => {
 
 
 
-// ==================== Auto Delete Upload Messages (Fixed) ====================
+// ==================== Auto Delete Upload Messages ====================
 client.on('messageCreate', async (message) => {
-    try {
-        if (message.author.bot) return;
+    if (message.author.bot) return;
 
-        const hasZip = message.attachments.some(a =>
-            a.name && a.name.toLowerCase().endsWith('.zip')
-        );
+    const zipFile = message.attachments.find(a =>
+        a.name && a.name.toLowerCase().endsWith('.zip')
+    );
 
-        if (!hasZip) return;
+    if (!zipFile) return;
 
-        // محاولة حذف متعددة لضمان الحذف
-        const remove = async () => {
-            try {
-                if (message.deletable) {
-                    await message.delete();
-                    return;
-                }
-            } catch (e) {
-                console.error('[DELETE RETRY]', e.message);
-            }
-        };
+    // حذف الرسالة فوراً قبل أي معالجة
+    await message.delete().catch(err => {
+        console.log('[RAVX DELETE ERROR]', err.message);
+    });
 
-        setTimeout(remove, 500);
-        setTimeout(remove, 2000);
-        setTimeout(remove, 5000);
+    console.log('[RAVX] Upload deleted:', zipFile.name);
 
-    } catch(e) {
-        console.error('[DELETE ERROR]', e.message);
-    }
+    // تابع المعالجة في الكود الأساسي
 });
 
 client.on('interactionCreate', async interaction => {
