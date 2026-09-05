@@ -680,25 +680,7 @@ client.once(Events.ClientReady, async () => {
 
 
 
-// ==================== Auto Delete Upload Messages ====================
-client.on('messageCreate', async (message) => {
-    if (message.author.bot) return;
-
-    const zipFile = message.attachments.find(a =>
-        a.name && a.name.toLowerCase().endsWith('.zip')
-    );
-
-    if (!zipFile) return;
-
-    // حذف الرسالة فوراً قبل أي معالجة
-    await message.delete().catch(err => {
-        console.log('[RAVX DELETE ERROR]', err.message);
-    });
-
-    console.log('[RAVX] Upload deleted:', zipFile.name);
-
-    // تابع المعالجة في الكود الأساسي
-});
+// Auto delete handled after successful Discord download in upload handler.
 
 client.on('interactionCreate', async interaction => {
     try {
