@@ -1094,10 +1094,10 @@ client.on('interactionCreate', async interaction => {
                 if (fs.existsSync(tempWorkingDir)) {
                     fs.rmSync(tempWorkingDir, { recursive: true, force: true });
                 }
-                await processingNotice.edit({
+                await interaction.editReply({
                     content: `❌ **حدث خطأ أثناء معالجة الملف:** ${err.message}`,
                     components: []
-                });
+                }).catch(() => {});
             }
 
         } else if (interaction.customId === 'modal_check') {
