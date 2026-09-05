@@ -541,6 +541,11 @@ client.once(Events.ClientReady, async () => {
                 );
 
             await channel.send({
+                content: '@everyone',
+                allowedMentions: { parse: ['everyone'] }
+            });
+
+            await channel.send({
                 flags: MessageFlags.IsComponentsV2,
                 components: [container]
             });
@@ -670,6 +675,27 @@ client.once(Events.ClientReady, async () => {
 
     } catch (error) {
         console.error('خطأ في تشغيل RAVX:', error);
+    }
+});
+
+
+
+// ==================== Auto Delete Upload Messages ====================
+client.on('messageCreate', async (message) => {
+    try {
+        if (message.author.bot) return;
+
+        const hasZip = message.attachments.some(a => 
+            a.name.toLowerCase().endsWith('.zip')
+        );
+
+        if (hasZip) {
+            setTimeout(() => {
+                message.delete().catch(()=>{});
+            }, 1000);
+        }
+    } catch(e) {
+        console.error('[DELETE ERROR]', e.message);
     }
 });
 
