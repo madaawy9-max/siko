@@ -1118,6 +1118,15 @@ client.on('interactionCreate', async interaction => {
             await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
     }
+    } catch (err) {
+        console.error('[RAVX INTERACTION ERROR]', err);
+        if (interaction && !interaction.replied && !interaction.deferred) {
+            await interaction.reply({
+                content: '❌ حدث خطأ، حاول مرة أخرى.',
+                flags: MessageFlags.Ephemeral
+            }).catch(() => {});
+        }
+    }
 });
 
 
