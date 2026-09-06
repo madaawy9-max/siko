@@ -1,4 +1,3 @@
-
 // RAVX per-user session control
 const ravxUserSessions = new Map();
 
@@ -62,6 +61,30 @@ try {
 
 const userSessionData = new Map();
 const adminGrantSession = new Map();
+
+// ==================== 🔒 نظام حماية الجلسات (منع التكرار / الدبل) ====================
+// يمنع أي عضو من فتح أكثر من عملية تشفير واحدة بنفس الوقت
+const activeEncryptOperations = new Map(); // userId -> timestamp بداية العملية
+const OPERATION_TIMEOUT_MS = 5 * 60 * 1000; // 5 دقائق كحد أقصى لأي عملية معلّقة (شبكة أمان)
+
+function isUserBusy(userId) {
+    const startedAt = activeEncryptOperations.get(userId);
+    if (!startedAt) return false;
+    if (Date.now() - startedAt > OPERATION_TIMEOUT_MS) {
+        // انتهت المهلة القصوى، نعتبر العملية منتهية تلقائياً
+        activeEncryptOperations.delete(userId);
+        return false;
+    }
+    return true;
+}
+
+function lockUserOperation(userId) {
+    activeEncryptOperations.set(userId, Date.now());
+}
+
+function unlockUserOperation(userId) {
+    activeEncryptOperations.delete(userId);
+}
 
 function loadPermissions() {
     try {
@@ -511,9 +534,10 @@ client.once(Events.ClientReady, async () => {
                     new TextDisplayBuilder().setContent(
                         '### ✨ المزايا\n' +
                         '⚡ **رفع مباشر وفوري** — ارفع ملفك الـ zip مباشرة دون الحاجة لملفات في السيرفر\n' +
-                        '🔒 **خصوصية مطلقة** — تُحذف رسالة ملفك تلقائياً بعد استلامه لمنع سرقته من الأعضاء\n' +
+                        '🔒 **خصوصية مطلقة** — تُحذف رسالة ملفك تلقائياً فور استلامها لمنع رؤيتها أو سرقتها من أي عضو\n' +
                         '🛡️ **محرك تشفير V8 المتطور** — تشفير متعدد الطبقات ضد التفكيك والـ Hooks\n' +
-                        '🌐 **بوابة تحميل برابط وكود** — تحميل سريع يتجاوز حدود ديسكورد (24MB+)'
+                        '🌐 **بوابة تحميل برابط وكود** — تحميل سريع يتجاوز حدود ديسكورد (24MB+)\n' +
+                        '🔁 **حماية من التكرار** — عملية واحدة فقط بنفس الوقت لكل عضو، بدون تداخل أو دبل'
                     )
                 );
 
@@ -698,10 +722,21 @@ client.on('interactionCreate', async interaction => {
         if (interaction.customId === 'btn_start_protect') {
             if (!hasEncryptAccess(interaction)) {
                 return await interaction.reply({
-                    content: '⛔ ما عندك صلاحية استخدام ميزة التشفير. تواصل مع الإدارة عشان يمنحونك وصول.',
+                    content: '⛔ **ما عندك صلاحية استخدام ميزة التشفير.**\nتواصل مع الإدارة عشان يمنحونك وصول.',
                     flags: MessageFlags.Ephemeral
                 });
             }
+
+            if (isUserBusy(userId)) {
+                return await interaction.reply({
+                    content:
+                        '⏳ **لديك عملية تشفير قيد التنفيذ حالياً.**\n' +
+                        'أكمل العملية الحالية أو انتظر حتى تنتهي مهلتها قبل بدء عملية جديدة.',
+                    flags: MessageFlags.Ephemeral
+                });
+            }
+
+            lockUserOperation(userId);
 
             const selectMenu = new StringSelectMenuBuilder()
                 .setCustomId('select_encrypt_mode')
@@ -945,7 +980,7 @@ client.on('interactionCreate', async interaction => {
                     `🔐 **نمط التشفير:** ${modeLabel}\n` +
                     `━━━━━━━━━━━━━━━━━━━━\n` +
                     `📁 **ارفع ملف السكربت المضغوط (\`.zip\`) هنا في الشات الآن.**\n` +
-                    `🔒 *حماية الخصوصية:* سيقوم البوت بحذف رسالتك فوراً لمنع تحميل ملفك من الأعضاء الآخرين.\n` +
+                    `🔒 *حماية الخصوصية:* بمجرد ما تنرفع، بيحذفها البوت فوراً قبل ما يقدر أي أحد يشوفها أو يحملها.\n` +
                     `⏱️ لديك **90 ثانية** لرفع الملف...`,
                 flags: MessageFlags.Ephemeral
             });
@@ -958,8 +993,9 @@ client.on('interactionCreate', async interaction => {
             try {
                 collected = await channel.awaitMessages({ filter, max: 1, time: 90000, errors: ['time'] });
             } catch (err) {
+                unlockUserOperation(userId);
                 return await interaction.editReply({
-                    content: '⏰ **انتهت مهلة الرفع (90 ثانية).** اضغط على زر "🔐 بدء التشفير" من جديد عندما تكون جاهزاً.',
+                    content: '⏰ **انتهت مهلة الرفع (90 ثانية).**\nاضغط على زر "🔐 بدء التشفير" من جديد عندما تكون جاهزاً.',
                     components: []
                 }).catch(() => {});
             }
@@ -970,15 +1006,22 @@ client.on('interactionCreate', async interaction => {
             // التحقق من صيغة الملف
             if (!attachment.name.toLowerCase().endsWith('.zip')) {
                 await userMessage.delete().catch(() => {});
+                unlockUserOperation(userId);
                 return await interaction.editReply({
-                    content: '❌ **الملف المرفوع ليس بصيغة `.zip`!** يرجى ضغط مجلد السكربت في ملف zip والمحاولة من جديد.',
+                    content: '❌ **الملف المرفوع ليس بصيغة `.zip`!**\nيرجى ضغط مجلد السكربت في ملف zip والمحاولة من جديد.',
                     components: []
                 }).catch(() => {});
             }
 
+            // 🔒 نحفظ رابط الملف فوراً، ثم نحذف رسالة العضو مباشرة قبل أي معالجة
+            // حتى ما يقدر أي عضو ثاني بالروم يشوف الملف أو يحمّله
+            const fileUrl = attachment.url || attachment.proxyURL;
+            const fallbackFileUrl = attachment.proxyURL && attachment.proxyURL !== fileUrl ? attachment.proxyURL : null;
+            await userMessage.delete().catch(() => {});
+
             // إشعار المستخدم بالبدء وتحديث الرد
             await interaction.editReply({
-                content: '⏳ **تم استلام الملف بنجاح!** جاري التحميل وفك الضغط وتشفير الأكواد بمحرك V8... برجاء الانتظار ثوانٍ...',
+                content: '⏳ **تم استلام الملف بنجاح وحذفه من الروم لحمايته.**\nجاري التحميل وفك الضغط وتشفير الأكواد بمحرك V8... برجاء الانتظار ثوانٍ...',
                 components: []
             }).catch(() => {});
 
@@ -991,20 +1034,16 @@ client.on('interactionCreate', async interaction => {
             try {
                 fs.mkdirSync(tempExtractedDir, { recursive: true });
 
-                // 1. تحميل الملف المرفوع أولاً من الديسكورد قبل حذف رسالة العضو
-                const fileUrl = attachment.url || attachment.proxyURL;
+                // 1. تحميل الملف (الرسالة الأصلية محذوفة بالفعل من الروم)
                 try {
                     await downloadFileStream(fileUrl, inputZipPath);
                 } catch (dlErr) {
-                    if (attachment.proxyURL && attachment.proxyURL !== fileUrl) {
-                        await downloadFileStream(attachment.proxyURL, inputZipPath);
+                    if (fallbackFileUrl) {
+                        await downloadFileStream(fallbackFileUrl, inputZipPath);
                     } else {
                         throw dlErr;
                     }
                 }
-
-                // 🛡️ حذف رسالة العضو الآن بعد اكتمال التحميل لحماية ملفاته
-                await userMessage.delete().catch(() => {});
 
                 // 2. فك ضغط الملف
                 const inputZip = new AdmZip(inputZipPath);
@@ -1112,9 +1151,11 @@ client.on('interactionCreate', async interaction => {
                     fs.rmSync(tempWorkingDir, { recursive: true, force: true });
                 }
                 await interaction.editReply({
-                    content: `❌ **حدث خطأ أثناء معالجة الملف:** ${err.message}`,
+                    content: `❌ **حدث خطأ أثناء معالجة الملف:**\n\`${err.message}\`\nجرّب مرة ثانية، وإذا استمرت المشكلة تواصل مع الدعم الفني.`,
                     components: []
                 }).catch(() => {});
+            } finally {
+                unlockUserOperation(userId);
             }
 
         } else if (interaction.customId === 'modal_check') {
@@ -1136,6 +1177,11 @@ client.on('interactionCreate', async interaction => {
     }
     } catch (err) {
         console.error('[RAVX INTERACTION ERROR]', err);
+        // شبكة أمان: تأكد إن أي قفل عملية يتفك حتى لو صار خطأ غير متوقع
+        try {
+            const uid = interaction?.user?.id;
+            if (uid) unlockUserOperation(uid);
+        } catch (e) {}
         if (interaction && !interaction.replied && !interaction.deferred) {
             await interaction.reply({
                 content: '❌ حدث خطأ، حاول مرة أخرى.',
