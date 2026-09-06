@@ -1120,25 +1120,7 @@ client.on('interactionCreate', async interaction => {
 });
 
 
-// ==================== حذف رسائل رفع الملفات تلقائياً ====================
-// يحذف رسالة العضو بعد التأكد أن البوت استلم رابط الملف
-client.on('messageCreate', async (message) => {
-    try {
-        if (message.author.bot) return;
-        if (!message.attachments || message.attachments.size === 0) return;
-
-        const attachment = message.attachments.first();
-        if (!attachment.name || !attachment.name.toLowerCase().endsWith('.zip')) return;
-
-        console.log(`[RAVX UPLOAD] استلام ملف: ${attachment.name} من ${message.author.tag}`);
-
-        // حذف الرسالة فوراً (بعد أن أصبح الرابط محفوظاً في Discord CDN)
-        await message.delete().catch(() => {});
-
-    } catch (err) {
-        console.error('[RAVX AUTO DELETE ERROR]', err.message);
-    }
-});
+// Auto delete disabled here. Upload messages are deleted only after successful download.
 
 console.log("TOKEN CHECK:", TOKEN ? TOKEN.substring(0,10) + "..." : "MISSING");
 console.log("TOKEN LENGTH:", TOKEN?.length);
