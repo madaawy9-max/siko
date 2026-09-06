@@ -86,6 +86,27 @@ function unlockUserOperation(userId) {
     activeEncryptOperations.delete(userId);
 }
 
+// ==================== 🎨 نمط رسائل موحّد لكل ردود البوت ====================
+const RAVX_COLORS = {
+    primary: 0x5865F2, // نفس لون البانل الرئيسي
+    success: 0x57F287,
+    error: 0xED4245,
+    warning: 0xFEE75C, // نفس لون بانل الصلاحيات
+    gold: 0xFFD700     // نفس لون بانل الأسعار
+};
+
+function ravxEmbed({ title, description, color = RAVX_COLORS.primary, fields = null }) {
+    const embed = new EmbedBuilder()
+        .setColor(color)
+        .setTitle(title)
+        .setTimestamp()
+        .setFooter({ text: 'RAVX-TEAM Security Systems — 2026' });
+    if (description) embed.setDescription(description);
+    if (fields && fields.length) embed.addFields(fields);
+    if (/^https?:\/\/.+/i.test(THUMBNAIL_URL)) embed.setThumbnail(THUMBNAIL_URL);
+    return embed;
+}
+
 function loadPermissions() {
     try {
         if (fs.existsSync(permissionsFilePath)) {
@@ -722,16 +743,22 @@ client.on('interactionCreate', async interaction => {
         if (interaction.customId === 'btn_start_protect') {
             if (!hasEncryptAccess(interaction)) {
                 return await interaction.reply({
-                    content: '⛔ **ما عندك صلاحية استخدام ميزة التشفير.**\nتواصل مع الإدارة عشان يمنحونك وصول.',
+                    embeds: [ravxEmbed({
+                        color: RAVX_COLORS.error,
+                        title: '⛔ وصول مرفوض',
+                        description: 'ما عندك صلاحية استخدام ميزة التشفير.\nتواصل مع الإدارة عشان يمنحونك وصول.'
+                    })],
                     flags: MessageFlags.Ephemeral
                 });
             }
 
             if (isUserBusy(userId)) {
                 return await interaction.reply({
-                    content:
-                        '⏳ **لديك عملية تشفير قيد التنفيذ حالياً.**\n' +
-                        'أكمل العملية الحالية أو انتظر حتى تنتهي مهلتها قبل بدء عملية جديدة.',
+                    embeds: [ravxEmbed({
+                        color: RAVX_COLORS.warning,
+                        title: '⏳ عندك عملية شغالة حالياً',
+                        description: 'لديك عملية تشفير قيد التنفيذ حالياً.\nأكمل العملية الحالية أو انتظر حتى تنتهي مهلتها قبل بدء عملية جديدة.'
+                    })],
                     flags: MessageFlags.Ephemeral
                 });
             }
@@ -760,7 +787,10 @@ client.on('interactionCreate', async interaction => {
                 );
 
             return await interaction.reply({
-                content: '### 🔐 اختر نمط التشفير\nحدد النمط المناسب من القائمة، وبعدها بنطلب منك آي بي السيرفر مباشرة.',
+                embeds: [ravxEmbed({
+                    title: '🔐 اختر نمط التشفير',
+                    description: 'حدد النمط المناسب من القائمة بالأسفل، وبعدها بنطلب منك آي بي السيرفر مباشرة.'
+                })],
                 components: [new ActionRowBuilder().addComponents(selectMenu)],
                 flags: MessageFlags.Ephemeral
             });
@@ -775,10 +805,11 @@ client.on('interactionCreate', async interaction => {
 
         if (interaction.customId === 'btn_contact_subscribe') {
             return await interaction.reply({
-                content:
-                    '📩 **شكراً لاهتمامك بالاشتراك!**\n' +
-                    'تواصل مع فريق الإدارة مباشرة عشان نكمل معاك تفاصيل الدفع وتفعيل الباقة.\n' +
-                    '-# افتح تذكرة دعم أو راسل الإدارة مباشرة',
+                embeds: [ravxEmbed({
+                    color: RAVX_COLORS.gold,
+                    title: '📩 شكراً لاهتمامك بالاشتراك!',
+                    description: 'تواصل مع فريق الإدارة مباشرة عشان نكمل معاك تفاصيل الدفع وتفعيل الباقة.\n-# افتح تذكرة دعم أو راسل الإدارة مباشرة'
+                })],
                 flags: MessageFlags.Ephemeral
             });
         }
@@ -786,7 +817,10 @@ client.on('interactionCreate', async interaction => {
         // منح صلاحية
         if (interaction.customId === 'btn_grant_permission') {
             if (!canGrantPermissions(interaction)) {
-                return await interaction.reply({ content: '⛔ ما عندك صلاحية منح تصاريح لأعضاء آخرين.', flags: MessageFlags.Ephemeral });
+                return await interaction.reply({
+                    embeds: [ravxEmbed({ color: RAVX_COLORS.error, title: '⛔ وصول مرفوض', description: 'ما عندك صلاحية منح تصاريح لأعضاء آخرين.' })],
+                    flags: MessageFlags.Ephemeral
+                });
             }
 
             const userSelect = new UserSelectMenuBuilder()
@@ -796,7 +830,7 @@ client.on('interactionCreate', async interaction => {
                 .setMaxValues(1);
 
             return await interaction.reply({
-                content: '### 1️⃣ اختر العضو',
+                embeds: [ravxEmbed({ color: RAVX_COLORS.warning, title: '1️⃣ اختر العضو', description: 'اختر العضو اللي تبي تمنحه صلاحية التشفير من القائمة بالأسفل.' })],
                 components: [new ActionRowBuilder().addComponents(userSelect)],
                 flags: MessageFlags.Ephemeral
             });
@@ -805,14 +839,20 @@ client.on('interactionCreate', async interaction => {
         // عرض الصلاحيات
         if (interaction.customId === 'btn_list_permissions') {
             if (!canGrantPermissions(interaction)) {
-                return await interaction.reply({ content: '⛔ هذا الزر للإدارة فقط.', flags: MessageFlags.Ephemeral });
+                return await interaction.reply({
+                    embeds: [ravxEmbed({ color: RAVX_COLORS.error, title: '⛔ وصول مرفوض', description: 'هذا الزر للإدارة فقط.' })],
+                    flags: MessageFlags.Ephemeral
+                });
             }
 
             encryptPermissions = loadPermissions();
             const entries = Object.entries(encryptPermissions);
 
             if (entries.length === 0) {
-                return await interaction.reply({ content: '📭 ما فيه أي صلاحيات ممنوحة حالياً.', flags: MessageFlags.Ephemeral });
+                return await interaction.reply({
+                    embeds: [ravxEmbed({ color: RAVX_COLORS.warning, title: '📭 لا توجد صلاحيات', description: 'ما فيه أي صلاحيات ممنوحة حالياً.' })],
+                    flags: MessageFlags.Ephemeral
+                });
             }
 
             const lines = entries.map(([uid, e]) => {
@@ -821,7 +861,7 @@ client.on('interactionCreate', async interaction => {
             });
 
             return await interaction.reply({
-                content: `### 📋 الصلاحيات الحالية\n${lines.join('\n')}`,
+                embeds: [ravxEmbed({ color: RAVX_COLORS.warning, title: '📋 الصلاحيات الحالية', description: lines.join('\n') })],
                 flags: MessageFlags.Ephemeral
             });
         }
@@ -848,7 +888,10 @@ client.on('interactionCreate', async interaction => {
     // اختيار العضو للرتبة
     if (interaction.isUserSelectMenu() && interaction.customId === 'grant_select_user') {
         if (!canGrantPermissions(interaction)) {
-            return await interaction.reply({ content: '⛔ ما عندك صلاحية منح تصاريح.', flags: MessageFlags.Ephemeral });
+            return await interaction.reply({
+                embeds: [ravxEmbed({ color: RAVX_COLORS.error, title: '⛔ وصول مرفوض', description: 'ما عندك صلاحية منح تصاريح.' })],
+                flags: MessageFlags.Ephemeral
+            });
         }
 
         const targetUserId = interaction.values[0];
@@ -861,7 +904,7 @@ client.on('interactionCreate', async interaction => {
             .setMaxValues(1);
 
         return await interaction.update({
-            content: `### 2️⃣ اختر الرتبة\nراح تُعطى لـ <@${targetUserId}> تلقائياً.`,
+            embeds: [ravxEmbed({ color: RAVX_COLORS.warning, title: '2️⃣ اختر الرتبة', description: `راح تُعطى لـ <@${targetUserId}> تلقائياً.` })],
             components: [new ActionRowBuilder().addComponents(roleSelect)]
         });
     }
@@ -869,12 +912,18 @@ client.on('interactionCreate', async interaction => {
     // اختيار الرتبة
     if (interaction.isRoleSelectMenu() && interaction.customId === 'grant_select_role') {
         if (!canGrantPermissions(interaction)) {
-            return await interaction.reply({ content: '⛔ ما عندك صلاحية منح تصاريح.', flags: MessageFlags.Ephemeral });
+            return await interaction.reply({
+                embeds: [ravxEmbed({ color: RAVX_COLORS.error, title: '⛔ وصول مرفوض', description: 'ما عندك صلاحية منح تصاريح.' })],
+                flags: MessageFlags.Ephemeral
+            });
         }
 
         const session = adminGrantSession.get(interaction.user.id);
         if (!session || !session.targetUserId) {
-            return await interaction.update({ content: '⚠️ انتهت الجلسة، اضغط "منح صلاحية تشفير" من جديد.', components: [] });
+            return await interaction.update({
+                embeds: [ravxEmbed({ color: RAVX_COLORS.warning, title: '⚠️ انتهت الجلسة', description: 'اضغط "منح صلاحية تشفير" من جديد.' })],
+                components: []
+            });
         }
         session.roleId = interaction.values[0];
         adminGrantSession.set(interaction.user.id, session);
@@ -888,7 +937,7 @@ client.on('interactionCreate', async interaction => {
         );
 
         return await interaction.update({
-            content: `### 3️⃣ حدد مدة الصلاحية\nلـ <@${session.targetUserId}> برتبة <@&${session.roleId}>`,
+            embeds: [ravxEmbed({ color: RAVX_COLORS.warning, title: '3️⃣ حدد مدة الصلاحية', description: `لـ <@${session.targetUserId}> برتبة <@&${session.roleId}>` })],
             components: [durationRow]
         });
     }
@@ -896,12 +945,18 @@ client.on('interactionCreate', async interaction => {
     // تنفيذ المنح
     if (interaction.isButton() && interaction.customId.startsWith('grant_duration_')) {
         if (!canGrantPermissions(interaction)) {
-            return await interaction.reply({ content: '⛔ ما عندك صلاحية منح تصاريح.', flags: MessageFlags.Ephemeral });
+            return await interaction.reply({
+                embeds: [ravxEmbed({ color: RAVX_COLORS.error, title: '⛔ وصول مرفوض', description: 'ما عندك صلاحية منح تصاريح.' })],
+                flags: MessageFlags.Ephemeral
+            });
         }
 
         const session = adminGrantSession.get(interaction.user.id);
         if (!session || !session.targetUserId || !session.roleId) {
-            return await interaction.update({ content: '⚠️ انتهت الجلسة، اضغط "منح صلاحية تشفير" من جديد.', components: [] });
+            return await interaction.update({
+                embeds: [ravxEmbed({ color: RAVX_COLORS.warning, title: '⚠️ انتهت الجلسة', description: 'اضغط "منح صلاحية تشفير" من جديد.' })],
+                components: []
+            });
         }
 
         await interaction.deferUpdate();
@@ -917,7 +972,10 @@ client.on('interactionCreate', async interaction => {
 
         if (!member) {
             adminGrantSession.delete(interaction.user.id);
-            return await interaction.editReply({ content: '❌ ما قدرت ألقى هذا العضو بالسيرفر.', components: [] });
+            return await interaction.editReply({
+                embeds: [ravxEmbed({ color: RAVX_COLORS.error, title: '❌ العضو غير موجود', description: 'ما قدرت ألقى هذا العضو بالسيرفر.' })],
+                components: []
+            });
         }
 
         await member.roles.add(session.roleId).catch(() => {});
@@ -935,20 +993,27 @@ client.on('interactionCreate', async interaction => {
         const expiryText = expiresAt ? `<t:${Math.floor(expiresAt / 1000)}:F>` : '**دائمة، ما تنتهي إلا بسحبها يدوياً**';
 
         await interaction.editReply({
-            content:
-                `✅ **تم منح الصلاحية بنجاح**\n` +
-                `👤 العضو: <@${session.targetUserId}>\n` +
-                `🎖️ الرتبة: <@&${session.roleId}>\n` +
-                `⏳ تنتهي: ${expiryText}`,
+            embeds: [ravxEmbed({
+                color: RAVX_COLORS.success,
+                title: '✅ تم منح الصلاحية بنجاح',
+                fields: [
+                    { name: '👤 العضو', value: `<@${session.targetUserId}>`, inline: true },
+                    { name: '🎖️ الرتبة', value: `<@&${session.roleId}>`, inline: true },
+                    { name: '⏳ تنتهي', value: expiryText, inline: false }
+                ]
+            })],
             components: []
         });
 
         await member.send({
-            content:
-                `🔑 **تم منحك صلاحية استخدام ميزة التشفير في RAVX-TEAM**\n` +
-                `🎖️ حصلت على رتبة: **${member.guild.roles.cache.get(session.roleId)?.name || 'صلاحية جديدة'}**\n` +
-                `⏳ الصلاحية سارية: ${expiresAt ? `حتى ${expiryText}` : 'بشكل دائم'}\n` +
-                `روح على قناة البانل واضغط "🔐 بدء التشفير" عشان تبدأ.`
+            embeds: [ravxEmbed({
+                color: RAVX_COLORS.success,
+                title: '🔑 تم منحك صلاحية التشفير في RAVX-TEAM',
+                description:
+                    `🎖️ حصلت على رتبة: **${member.guild.roles.cache.get(session.roleId)?.name || 'صلاحية جديدة'}**\n` +
+                    `⏳ الصلاحية سارية: ${expiresAt ? `حتى ${expiryText}` : 'بشكل دائم'}\n` +
+                    `روح على قناة البانل واضغط "🔐 بدء التشفير" عشان تبدأ.`
+            })]
         }).catch(() => {});
 
         return;
@@ -973,15 +1038,17 @@ client.on('interactionCreate', async interaction => {
 
             // إشعار المستخدم برفع الملف داخل الروم
             await interaction.reply({
-                content:
-                    `### 📤 الخطوة التالية: رفع ملف السكربت المضغوط (.zip)\n` +
-                    `━━━━━━━━━━━━━━━━━━━━\n` +
-                    `🌐 **الآي بي المرخص:** \`${ip}\`\n` +
-                    `🔐 **نمط التشفير:** ${modeLabel}\n` +
-                    `━━━━━━━━━━━━━━━━━━━━\n` +
-                    `📁 **ارفع ملف السكربت المضغوط (\`.zip\`) هنا في الشات الآن.**\n` +
-                    `🔒 *حماية الخصوصية:* بمجرد ما تنرفع، بيحذفها البوت فوراً قبل ما يقدر أي أحد يشوفها أو يحملها.\n` +
-                    `⏱️ لديك **90 ثانية** لرفع الملف...`,
+                embeds: [ravxEmbed({
+                    title: '📤 الخطوة التالية: رفع ملف السكربت المضغوط (.zip)',
+                    fields: [
+                        { name: '🌐 الآي بي المرخص', value: `\`${ip}\``, inline: true },
+                        { name: '🔐 نمط التشفير', value: modeLabel, inline: true }
+                    ],
+                    description:
+                        '📁 **ارفع ملف السكربت المضغوط (`.zip`) هنا في الشات الآن.**\n' +
+                        '🔒 *حماية الخصوصية:* يتم حذف رسالتك تلقائياً بمجرد اكتمال تحميل الملف، قبل ما يقدر أي عضو ثاني يشوفها أو يحمّلها.\n' +
+                        '⏱️ لديك **90 ثانية** لرفع الملف.'
+                })],
                 flags: MessageFlags.Ephemeral
             });
 
@@ -995,7 +1062,11 @@ client.on('interactionCreate', async interaction => {
             } catch (err) {
                 unlockUserOperation(userId);
                 return await interaction.editReply({
-                    content: '⏰ **انتهت مهلة الرفع (90 ثانية).**\nاضغط على زر "🔐 بدء التشفير" من جديد عندما تكون جاهزاً.',
+                    embeds: [ravxEmbed({
+                        color: RAVX_COLORS.warning,
+                        title: '⏰ انتهت مهلة الرفع',
+                        description: 'انتهت مهلة الـ90 ثانية المخصصة لرفع الملف.\nاضغط على زر "🔐 بدء التشفير" من جديد عندما تكون جاهزاً.'
+                    })],
                     components: []
                 }).catch(() => {});
             }
@@ -1008,20 +1079,25 @@ client.on('interactionCreate', async interaction => {
                 await userMessage.delete().catch(() => {});
                 unlockUserOperation(userId);
                 return await interaction.editReply({
-                    content: '❌ **الملف المرفوع ليس بصيغة `.zip`!**\nيرجى ضغط مجلد السكربت في ملف zip والمحاولة من جديد.',
+                    embeds: [ravxEmbed({
+                        color: RAVX_COLORS.error,
+                        title: '❌ صيغة الملف غير صحيحة',
+                        description: 'الملف المرفوع ليس بصيغة `.zip`.\nيرجى ضغط مجلد السكربت في ملف zip والمحاولة من جديد.'
+                    })],
                     components: []
                 }).catch(() => {});
             }
 
-            // 🔒 نحفظ رابط الملف فوراً، ثم نحذف رسالة العضو مباشرة قبل أي معالجة
-            // حتى ما يقدر أي عضو ثاني بالروم يشوف الملف أو يحمّله
             const fileUrl = attachment.url || attachment.proxyURL;
             const fallbackFileUrl = attachment.proxyURL && attachment.proxyURL !== fileUrl ? attachment.proxyURL : null;
-            await userMessage.delete().catch(() => {});
 
-            // إشعار المستخدم بالبدء وتحديث الرد
+            // إشعار المستخدم بالبدء
             await interaction.editReply({
-                content: '⏳ **تم استلام الملف بنجاح وحذفه من الروم لحمايته.**\nجاري التحميل وفك الضغط وتشفير الأكواد بمحرك V8... برجاء الانتظار ثوانٍ...',
+                embeds: [ravxEmbed({
+                    color: RAVX_COLORS.primary,
+                    title: '⏳ جاري تحميل الملف...',
+                    description: 'تم استلام رابط ملفك، جاري تحميله الآن ثم حذفه فوراً من الروم لحمايته.'
+                })],
                 components: []
             }).catch(() => {});
 
@@ -1034,7 +1110,7 @@ client.on('interactionCreate', async interaction => {
             try {
                 fs.mkdirSync(tempExtractedDir, { recursive: true });
 
-                // 1. تحميل الملف (الرسالة الأصلية محذوفة بالفعل من الروم)
+                // 1. تحميل الملف أولاً (رابط الملف يُلغى فور حذف الرسالة، فلازم التحميل يسبق الحذف)
                 try {
                     await downloadFileStream(fileUrl, inputZipPath);
                 } catch (dlErr) {
@@ -1044,6 +1120,19 @@ client.on('interactionCreate', async interaction => {
                         throw dlErr;
                     }
                 }
+
+                // 🔒 التحميل نجح — نحذف رسالة العضو من الروم فوراً الآن قبل أي معالجة إضافية
+                // حتى ما يقدر أي عضو ثاني يشوف الملف أو يحمّله
+                await userMessage.delete().catch(() => {});
+
+                await interaction.editReply({
+                    embeds: [ravxEmbed({
+                        color: RAVX_COLORS.primary,
+                        title: '🛠️ جاري المعالجة...',
+                        description: 'تم تحميل الملف وحذفه من الروم بنجاح.\nجاري فك الضغط وتشفير الأكواد بمحرك V8... برجاء الانتظار ثوانٍ.'
+                    })],
+                    components: []
+                }).catch(() => {});
 
                 // 2. فك ضغط الملف
                 const inputZip = new AdmZip(inputZipPath);
@@ -1105,17 +1194,19 @@ client.on('interactionCreate', async interaction => {
                         .setEmoji('🌐')
                 );
 
-                const successMessage =
-                    `🛡️ **[RAVX-TEAM] تمّت معالجة وتشفير سكريبتك بنجاح!**\n` +
-                    `━━━━━━━━━━━━━━━━━━━━\n` +
-                    `📦 **المورد:** \`${resourceName}\`\n` +
-                    `🌐 **الآي بي المرخّص:** \`${ip}\`\n` +
-                    `🔐 **نمط التشفير:** ${modeLabel}\n` +
-                    `📊 **حجم الملف:** \`${(finalStats.size / 1024).toFixed(1)} KB\`\n` +
-                    `🔑 **كود التحميل بالموقع:** \`\`\`${scriptEntry.code}\`\`\`\n` +
-                    `🔗 **رابط التحميل المباشر:**\n${webDownloadUrl}\n` +
-                    `━━━━━━━━━━━━━━━━━━━━\n` +
-                    `💡 ملفك جاهز للتحميل من الموقع أو عبر المرفقات بالأسفل.`;
+                const successEmbed = ravxEmbed({
+                    color: RAVX_COLORS.success,
+                    title: '🛡️ تمّت معالجة وتشفير سكريبتك بنجاح!',
+                    description: '💡 ملفك جاهز للتحميل من الموقع أو عبر المرفقات بالأسفل.',
+                    fields: [
+                        { name: '📦 المورد', value: `\`${resourceName}\``, inline: true },
+                        { name: '🌐 الآي بي المرخّص', value: `\`${ip}\``, inline: true },
+                        { name: '🔐 نمط التشفير', value: modeLabel, inline: true },
+                        { name: '📊 حجم الملف', value: `\`${(finalStats.size / 1024).toFixed(1)} KB\``, inline: true },
+                        { name: '🔑 كود التحميل بالموقع', value: `\`\`\`${scriptEntry.code}\`\`\``, inline: false },
+                        { name: '🔗 رابط التحميل المباشر', value: webDownloadUrl, inline: false }
+                    ]
+                });
 
                 // تجهيز المرفق إذا كان الحجم أقل من 24 ميجا
                 const sendFiles = [];
@@ -1125,7 +1216,7 @@ client.on('interactionCreate', async interaction => {
 
                 // إرسال النتيجة بالخاص إذا كان مفتوحاً
                 await interaction.user.send({
-                    content: successMessage,
+                    embeds: [successEmbed],
                     files: sendFiles,
                     components: [webRow]
                 }).catch(() => {
@@ -1135,7 +1226,7 @@ client.on('interactionCreate', async interaction => {
 
                 // تعديل الرد المباشر في الروم
                 await interaction.editReply({
-                    content: successMessage,
+                    embeds: [successEmbed],
                     files: sendFiles,
                     components: [webRow]
                 });
@@ -1151,7 +1242,11 @@ client.on('interactionCreate', async interaction => {
                     fs.rmSync(tempWorkingDir, { recursive: true, force: true });
                 }
                 await interaction.editReply({
-                    content: `❌ **حدث خطأ أثناء معالجة الملف:**\n\`${err.message}\`\nجرّب مرة ثانية، وإذا استمرت المشكلة تواصل مع الدعم الفني.`,
+                    embeds: [ravxEmbed({
+                        color: RAVX_COLORS.error,
+                        title: '❌ حدث خطأ أثناء معالجة الملف',
+                        description: `\`${err.message}\`\nجرّب مرة ثانية، وإذا استمرت المشكلة تواصل مع الدعم الفني.`
+                    })],
                     components: []
                 }).catch(() => {});
             } finally {
@@ -1163,14 +1258,14 @@ client.on('interactionCreate', async interaction => {
             const ip = interaction.fields.getTextInputValue('ip_field');
             const scriptsList = licenses[ip] ? licenses[ip].join(', ') : 'لا توجد تراخيص مسجلة';
 
-            const embed = new EmbedBuilder()
-                .setTitle('🔍 نتيجة فحص التراخيص')
-                .setColor(0x00ffcc)
-                .addFields(
-                    { name: '🌐 الآي بي:', value: `\`${ip}\``, inline: false },
-                    { name: '📋 الموارد:', value: `\`${scriptsList}\``, inline: false }
-                )
-                .setTimestamp();
+            const embed = ravxEmbed({
+                color: RAVX_COLORS.primary,
+                title: '🔍 نتيجة فحص التراخيص',
+                fields: [
+                    { name: '🌐 الآي بي', value: `\`${ip}\``, inline: false },
+                    { name: '📋 الموارد', value: `\`${scriptsList}\``, inline: false }
+                ]
+            });
 
             await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
@@ -1184,7 +1279,7 @@ client.on('interactionCreate', async interaction => {
         } catch (e) {}
         if (interaction && !interaction.replied && !interaction.deferred) {
             await interaction.reply({
-                content: '❌ حدث خطأ، حاول مرة أخرى.',
+                embeds: [ravxEmbed({ color: RAVX_COLORS.error, title: '❌ حدث خطأ', description: 'حاول مرة أخرى.' })],
                 flags: MessageFlags.Ephemeral
             }).catch(() => {});
         }
