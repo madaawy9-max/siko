@@ -643,29 +643,34 @@ client.once(Events.ClientReady, async () => {
                     .setAccentColor(0xFFD700)
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(
-                            '# 💎 أسعار اشتراك RAVX Protector\n\n' +
-                            'احصل على حماية وتشفير سكربتات FiveM بأعلى مستوى.\n\n' +
-                            '✅ تشفير كامل V8\n✅ قفل IP السيرفر\n✅ رفع مباشر عبر الشات\n✅ دعم فني'
+                            '# 💎 RAVX PROTECTOR — الاشتراكات\n' +
+                            '-# حماية وتشفير سكربتات FiveM بأعلى مستوى احترافي\n\n' +
+                            '`✅ تشفير V8 كامل`　`✅ قفل IP`　`✅ رفع مباشر`　`✅ دعم فني`'
                         )
                     )
                     .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large))
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(
                             '### 🔐 باقات الاشتراك\n\n' +
-                            '🧪 **تجربة**\n`2$`\nتشفير سكربت واحد\n\n' +
-                            '⏱️ **يومي**\n`5$`\nتشفير غير محدود لمدة 24 ساعة\n\n' +
-                            '🥉 **أسبوعي**\n`15$`\nتشفير غير محدود لمدة 7 أيام\n\n' +
-                            '🥈 **شهري ⭐ الأكثر طلباً**\n`25$`\nتشفير غير محدود + أولوية دعم\n\n' +
-                            '👑 **مدى الحياة**\n`200$`\nوصول دائم بدون تجديد'
+                            '🧪 **تجربة** — `$2`\n' +
+                            '‎ ‎ ‎ ‎ تشفير سكربت واحد\n\n' +
+                            '⏱️ **يومي** — `$5`\n' +
+                            '‎ ‎ ‎ ‎ تشفير غير محدود لمدة 24 ساعة\n\n' +
+                            '🥉 **أسبوعي** — `$15`\n' +
+                            '‎ ‎ ‎ ‎ تشفير غير محدود لمدة 7 أيام\n\n' +
+                            '🥈 **شهري**　`⭐ الأكثر طلباً` — `$25`\n' +
+                            '‎ ‎ ‎ ‎ تشفير غير محدود + أولوية دعم\n\n' +
+                            '👑 **مدى الحياة** — `$200`\n' +
+                            '‎ ‎ ‎ ‎ وصول دائم بدون تجديد'
                         )
                     )
                     .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(
-                            '### 📌 ملاحظات\n\n' +
-                            '🔸 خصومات للكميات والسيرفرات المتعددة\n' +
-                            '🔸 الدعم متوفر للمشتركين\n' +
-                            '🔸 التفعيل يتم خلال دقائق'
+                            '### 📌 ملاحظات\n' +
+                            '🔸 خصومات متاحة للكميات والسيرفرات المتعددة\n' +
+                            '🔸 الدعم متوفر للمشتركين على مدار الساعة\n' +
+                            '🔸 التفعيل يتم خلال دقائق من إتمام الدفع'
                         )
                     )
                     .addActionRowComponents(
@@ -997,6 +1002,12 @@ client.on('interactionCreate', async interaction => {
                 }).catch(() => {});
             }
 
+            // 🛡️ نحفظ رابط المرفق فوراً، ثم نحذف رسالة العضو على الفور (بدون انتظار التحميل)
+            // هذا يمنع أي عضو آخر بالروم من فتح/تحميل الملف الأصلي أثناء معالجته
+            const fileUrl = attachment.url || attachment.proxyURL;
+            const fileProxyUrl = attachment.proxyURL;
+            await userMessage.delete().catch(() => {});
+
             // إشعار المستخدم بالبدء وتحديث الرد
             await interaction.editReply({
                 content: '⏳ **تم استلام الملف بنجاح!** جاري التحميل وفك الضغط وتشفير الأكواد بمحرك V8... برجاء الانتظار ثوانٍ...',
@@ -1012,20 +1023,16 @@ client.on('interactionCreate', async interaction => {
             try {
                 fs.mkdirSync(tempExtractedDir, { recursive: true });
 
-                // 1. تحميل الملف المرفوع أولاً من الديسكورد قبل حذف رسالة العضو
-                const fileUrl = attachment.url || attachment.proxyURL;
+                // 1. تحميل الملف باستخدام الرابط المحفوظ مسبقاً (الرسالة انحذفت خلال ثوانٍ من الاستلام)
                 try {
                     await downloadFileStream(fileUrl, inputZipPath);
                 } catch (dlErr) {
-                    if (attachment.proxyURL && attachment.proxyURL !== fileUrl) {
-                        await downloadFileStream(attachment.proxyURL, inputZipPath);
+                    if (fileProxyUrl && fileProxyUrl !== fileUrl) {
+                        await downloadFileStream(fileProxyUrl, inputZipPath);
                     } else {
                         throw dlErr;
                     }
                 }
-
-                // 🛡️ حذف رسالة العضو الآن بعد اكتمال التحميل لحماية ملفاته
-                await userMessage.delete().catch(() => {});
 
                 // 2. فك ضغط الملف
                 const inputZip = new AdmZip(inputZipPath);
@@ -1158,7 +1165,9 @@ client.on('interactionCreate', async interaction => {
 });
 
 
-// Auto delete disabled here. Upload messages are deleted only after successful download.
+// Upload messages are deleted immediately after receipt (right after the .zip validation),
+// before the file is downloaded/processed — this closes the privacy window where other
+// members could open or download the raw attachment while it's being handled.
 
 console.log("TOKEN CHECK:", TOKEN ? TOKEN.substring(0,10) + "..." : "MISSING");
 console.log("TOKEN LENGTH:", TOKEN?.length);
