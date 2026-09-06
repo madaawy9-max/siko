@@ -509,9 +509,11 @@ client.once(Events.ClientReady, async () => {
 
             const titleSection = new SectionBuilder().addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(
-                    '# 🔒 RAVX Protector\n' +
-                    '**نظام RAVX** الاحترافي لحماية وتشفير موارد **FiveM**.\n' +
-                    'كل شي عبر الأزرار — ارفع ملفك المضغوط (.zip) في الروم ويجيك جاهز ومحمي بالكامل!'
+                    '# 🛡️ RAVX PROTECTOR\n' +
+                    '-# Enterprise-Grade FiveM Script Security\n\n' +
+                    '**`🟢 ONLINE`**　**`⚡ V8 ENGINE`**　**`🔒 AES-256`**\n\n' +
+                    'حماية وتشفير احترافي لموارد **FiveM** — كل العملية تتم عبر الأزرار بالأسفل.\n' +
+                    'ارفع ملفك المضغوط `.zip`، وخلال ثوانٍ يرجع لك جاهز، مشفّر، ومؤمّن بالكامل.'
                 )
             );
             if (/^https?:\/\/.+/i.test(THUMBNAIL_URL)) {
@@ -523,22 +525,22 @@ client.once(Events.ClientReady, async () => {
                 .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large))
                 .addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(
-                        '### ⚙️ كيف يشتغل؟\n' +
-                        '🔸 اضغط **🔐 بدء التشفير** بالأسفل\n' +
-                        '🔸 اختر **نمط التشفير** المناسب من القائمة\n' +
-                        '🔸 أدخل آي بي السيرفر المخوّل بتشغيل السكريبت\n' +
-                        '🔸 **ارفع ملف السكربت المضغوط (.zip)** في الشات مباشرة\n' +
-                        '🔸 البوت يحذف رسالتك فوراً للخصوصية، ويجهّز ملفك المشفر ويعطيك كود ورابط التحميل!'
+                        '### 📋 آلية العمل\n' +
+                        '> **1.** اضغط زر **🔐 بدء التشفير**\n' +
+                        '> **2.** اختر **نمط التشفير** المناسب لسكريبتك\n' +
+                        '> **3.** أدخل **الآي بي** المخوّل بتشغيل السكريبت\n' +
+                        '> **4.** ارفع **ملف الـ `.zip`** مباشرة في الشات\n' +
+                        '> **5.** استلم ملفك محمي + كود ورابط تحميل فوري'
                     )
                 )
                 .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
                 .addTextDisplayComponents(
                     new TextDisplayBuilder().setContent(
-                        '### ✨ المزايا\n' +
-                        '⚡ **رفع مباشر وفوري** — ارفع ملفك الـ zip مباشرة دون الحاجة لملفات في السيرفر\n' +
-                        '🔒 **خصوصية مطلقة** — تُحذف رسالة ملفك تلقائياً بعد استلامه لمنع سرقته من الأعضاء\n' +
-                        '🛡️ **محرك تشفير V8 المتطور** — تشفير متعدد الطبقات ضد التفكيك والـ Hooks\n' +
-                        '🌐 **بوابة تحميل برابط وكود** — تحميل سريع يتجاوز حدود ديسكورد (24MB+)'
+                        '### ✨ لماذا RAVX؟\n' +
+                        '🛡️ ‎ **محرك تشفير V8** — طبقات حماية متعددة ضد الـ Hooks والتفكيك\n' +
+                        '⚡ ‎ **رفع ومعالجة فورية** — بدون تجهيز ملفات مسبقة على السيرفر\n' +
+                        '🔒 ‎ **خصوصية تامة** — تُحذف رسالتك تلقائياً فور استلام الملف\n' +
+                        '🌐 ‎ **بوابة تحميل مستقلة** — روابط وأكواد تتجاوز حدود ديسكورد (24MB+)'
                     )
                 );
 
@@ -592,20 +594,20 @@ client.once(Events.ClientReady, async () => {
                     .setAccentColor(0xFEE75C)
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(
-                            '# 🔑 لوحة صلاحيات التشفير\n' +
-                            'من هنا تقدر تمنح أي عضو صلاحية استخدام زر **بدء التشفير** في البانل الرئيسي.\n' +
-                            'تختار الشخص، ثم الرتبة اللي تنعطى له تلقائياً، ثم مدة الصلاحية.'
+                            '# 🔑 ADMIN CONTROL — صلاحيات التشفير\n' +
+                            '-# للإدارة والمخوّلين فقط\n\n' +
+                            'امنح أي عضو صلاحية استخدام زر **🔐 بدء التشفير** في البانل الرئيسي — برتبة تلقائية ومدة محددة.'
                         )
                     )
-                    .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
+                    .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Large))
                     .addTextDisplayComponents(
                         new TextDisplayBuilder().setContent(
                             '### ⚙️ آلية العمل\n' +
-                            '🔸 اضغط **منح صلاحية تشفير**\n' +
-                            '🔸 اختر العضو من القائمة\n' +
-                            '🔸 اختر الرتبة اللي تنعطى له\n' +
-                            '🔸 حدد المدة (أو خلّها دائمة)\n' +
-                            '🔸 بعد الانتهاء، تنسحب الرتبة والصلاحية منه تلقائياً'
+                            '> **1.** اضغط **➕ منح صلاحية تشفير**\n' +
+                            '> **2.** اختر العضو من القائمة\n' +
+                            '> **3.** اختر الرتبة اللي تُمنح له\n' +
+                            '> **4.** حدد المدة — أو اجعلها دائمة ♾️\n' +
+                            '> **5.** تُسحب الرتبة والصلاحية تلقائياً عند الانتهاء'
                         )
                     )
                     .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
@@ -614,6 +616,10 @@ client.once(Events.ClientReady, async () => {
                             new ButtonBuilder().setCustomId('btn_grant_permission').setLabel('➕ منح صلاحية تشفير').setStyle(ButtonStyle.Success),
                             new ButtonBuilder().setCustomId('btn_list_permissions').setLabel('📋 عرض الصلاحيات الحالية').setStyle(ButtonStyle.Secondary)
                         )
+                    )
+                    .addSeparatorComponents(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small))
+                    .addTextDisplayComponents(
+                        new TextDisplayBuilder().setContent('-# RAVX-TEAM Security Systems — 2026')
                     );
 
                 await adminChannel.send({
