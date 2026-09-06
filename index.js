@@ -1002,11 +1002,8 @@ client.on('interactionCreate', async interaction => {
                 }).catch(() => {});
             }
 
-            // 🛡️ نحفظ رابط المرفق فوراً، ثم نحذف رسالة العضو على الفور (بدون انتظار التحميل)
-            // هذا يمنع أي عضو آخر بالروم من فتح/تحميل الملف الأصلي أثناء معالجته
             const fileUrl = attachment.url || attachment.proxyURL;
             const fileProxyUrl = attachment.proxyURL;
-            await userMessage.delete().catch(() => {});
 
             // إشعار المستخدم بالبدء وتحديث الرد
             await interaction.editReply({
@@ -1023,7 +1020,8 @@ client.on('interactionCreate', async interaction => {
             try {
                 fs.mkdirSync(tempExtractedDir, { recursive: true });
 
-                // 1. تحميل الملف باستخدام الرابط المحفوظ مسبقاً (الرسالة انحذفت خلال ثوانٍ من الاستلام)
+                // 1. لازم نحمّل الملف أولاً — ديسكورد يُبطل رابط المرفق (CDN) فور حذف الرسالة الأصلية،
+                //    فحذف الرسالة قبل التحميل يسبب فشل بكود 404. نحمّل بأسرع وقت ثم نحذف فوراً بعدها.
                 try {
                     await downloadFileStream(fileUrl, inputZipPath);
                 } catch (dlErr) {
@@ -1033,6 +1031,10 @@ client.on('interactionCreate', async interaction => {
                         throw dlErr;
                     }
                 }
+
+                // 🛡️ نحذف رسالة العضو فوراً بمجرد اكتمال التحميل — قبل فك الضغط والتشفير (الخطوات الأطول)
+                // هذا يحصر فترة التعرض بوقت التحميل فقط بدل طول عملية المعالجة كاملة
+                await userMessage.delete().catch(() => {});
 
                 // 2. فك ضغط الملف
                 const inputZip = new AdmZip(inputZipPath);
@@ -1165,9 +1167,9 @@ client.on('interactionCreate', async interaction => {
 });
 
 
-// Upload messages are deleted immediately after receipt (right after the .zip validation),
-// before the file is downloaded/processed — this closes the privacy window where other
-// members could open or download the raw attachment while it's being handled.
+// Upload messages are deleted immediately after the file finishes downloading —
+// right before extraction/encryption — since Discord invalidates the attachment's
+// CDN link as soon as the source message is deleted, so download must happen first.
 
 console.log("TOKEN CHECK:", TOKEN ? TOKEN.substring(0,10) + "..." : "MISSING");
 console.log("TOKEN LENGTH:", TOKEN?.length);
