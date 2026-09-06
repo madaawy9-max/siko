@@ -315,25 +315,11 @@ end
 return ${vFunc}()`;
 }
 
-
-function processAndProtectFiles(dirPath, targetIp, rootFolderName, encryptionMode) {
-    const files = fs.readdirSync(dirPath);
-    for (const file of files) {
-        const fullPath = path.join(dirPath, file);
-        const stat = fs.statSync(fullPath);
-
-        if (stat.isDirectory()) {
-            if (file === 'node_modules' || file === '.git') continue;
-            processAndProtectFiles(fullPath, targetIp, rootFolderName, encryptionMode);
-        } else {
-            const extName = path.extname(file).toLowerCase();
-            const baseName = path.basename(file, extName).toLowerCase();
-
-            if (extName === '.lua') {
-                let originalContent = fs.readFileSync(fullPath, 'utf8');
-
-                if (baseName.includes('server') || baseName.includes('main')) {
-                    const protectionCode = `
+// 🛡️ يبني كود فحص الترخيص/الآيبي كـ Lua نص صريح (غير مشفّر أبداً)
+// مهم: هذا الكود لازم يضل خارج الـ payload المشفّر، وإلا فشل تحميل الملف المشفّر
+// سيمنع كود الحماية نفسه من الوصول لخط الطباعة (وهذا كان سبب اختفاء رسائل الكونسول).
+function buildProtectionCode(targetIp, rootFolderName) {
+    return `
 --------------------------------------------------
 -- [🛡️ RAVX-TEAM SERVER SECURITY & IP CHECK] --
 --------------------------------------------------
@@ -408,6 +394,8 @@ print("^5======================================================^7")
                     }), { ["Content-Type"] = "application/json" })
                 end
             end
+        else
+            print("^1[RAVX SECURITY] تعذر التحقق من الآي بي (فشل طلب api.ipify.org) — لن يتم ترخيص السكريبت.^7")
         end
         checked = true
     end, "GET", "")
@@ -416,6 +404,10 @@ print("^5======================================================^7")
     while not checked and timeoutCount < 80 do
         timeoutCount = timeoutCount + 1
         Citizen.Wait(100)
+    end
+
+    if not checked then
+        print("^1[RAVX SECURITY] ⏰ انتهت مهلة الاتصال بخدمة فحص الآي بي (api.ipify.org) — تأكد من اتصال السيرفر بالإنترنت.^7")
     end
 
     if not authorized then
@@ -427,8 +419,29 @@ print("^5======================================================^7")
 end)
 --------------------------------------------------
 `;
-                    originalContent = protectionCode + "\n" + originalContent;
-                }
+}
+
+function processAndProtectFiles(dirPath, targetIp, rootFolderName, encryptionMode) {
+    const files = fs.readdirSync(dirPath);
+    for (const file of files) {
+        const fullPath = path.join(dirPath, file);
+        const stat = fs.statSync(fullPath);
+
+        if (stat.isDirectory()) {
+            if (file === 'node_modules' || file === '.git') continue;
+            processAndProtectFiles(fullPath, targetIp, rootFolderName, encryptionMode);
+        } else {
+            const extName = path.extname(file).toLowerCase();
+            const baseName = path.basename(file, extName).toLowerCase();
+
+            if (extName === '.lua') {
+                const originalContent = fs.readFileSync(fullPath, 'utf8');
+
+                // ✅ كود الحماية يُبنى منفصل، ويُضاف لاحقاً بدون تشفير دايماً
+                const needsProtection = baseName.includes('server') || baseName.includes('main');
+                const protectionCode = needsProtection
+                    ? buildProtectionCode(targetIp, rootFolderName)
+                    : '';
 
                 let shouldEncrypt = false;
                 if (encryptionMode === 'full') {
@@ -443,12 +456,20 @@ end)
                     shouldEncrypt = false;
                 }
 
+                let finalContent;
                 if (shouldEncrypt) {
-                    const obfuscatedLua = obfuscateLuaCode(originalContent);
-                    fs.writeFileSync(fullPath, obfuscatedLua, 'utf8');
+                    // ⚠️ يُشفَّر فقط محتوى المطوّر الأصلي — وليس كود الحماية
+                    const obfuscatedBody = obfuscateLuaCode(originalContent);
+                    finalContent = protectionCode
+                        ? (protectionCode + "\n" + obfuscatedBody)
+                        : obfuscatedBody;
                 } else {
-                    fs.writeFileSync(fullPath, originalContent, 'utf8');
+                    finalContent = protectionCode
+                        ? (protectionCode + "\n" + originalContent)
+                        : originalContent;
                 }
+
+                fs.writeFileSync(fullPath, finalContent, 'utf8');
             }
         }
     }
