@@ -42,8 +42,7 @@ const BASE_URL = (process.env.BASE_URL || "https://ravx.onrender.com").replace(/
 
 const BANNER_IMAGE_URL = "https://cdn.discordapp.com/attachments/1347530974971559996/1545106692285661206/ravx_logo_bannr.png?ex=6a9c41be&is=6a9af03e&hm=7bce2e840b13301cdc97aef0dd6738fc7429742431ec97c500999798d0118c43&";
 const THUMBNAIL_URL = "https://cdn.discordapp.com/attachments/1347530974971559996/1545517413678977034/RAVX_LOGO.png?ex=6a9c6ec1&is=6a9b1d41&hm=f4254219e932d39218cee412e64e1d0ae3eba0a9993d75024e7eae292972e9eb&";
-# مفتاح تشفير AES-256-GCM (لا تشاركه مع أحد!)
-ENCRYPTION_KEY=gZApNGbvY1yFcXIh+m8EZXgTYpbNXfDQGPgZyNRLfJU=
+
 const filePath = path.join(__dirname, 'licenses.json');
 const permissionsFilePath = path.join(__dirname, 'permissions.json');
 
@@ -857,13 +856,13 @@ client.on('interactionCreate', async interaction => {
 
         if (interaction.customId === 'btn_cancel_stuck_operation') {
             unlockUserOperation(userId);
-            return await interaction.reply({
+            return await interaction.update({
                 embeds: [ravxEmbed({
                     color: RAVX_COLORS.success,
                     title: '✅ تم إلغاء العملية العالقة',
                     description: 'تقدر الحين تضغط "🔐 بدء التشفير" من جديد وتبدأ عملية جديدة.'
                 })],
-                flags: MessageFlags.Ephemeral
+                components: []
             });
         }
 
@@ -934,7 +933,11 @@ client.on('interactionCreate', async interaction => {
                 .setPlaceholder('127.0.0.1')
                 .setRequired(true);
             modal.addComponents(new ActionRowBuilder().addComponents(ipInput));
-            return await interaction.showModal(modal);
+            await interaction.showModal(modal);
+
+            // نحذف رسالة اختيار النمط تلقائياً بعد ما يختار العضو، بدل ما يحتاج يضغط "Dismiss message" يدوياً
+            interaction.message?.delete().catch(() => {});
+            return;
         }
     }
 
