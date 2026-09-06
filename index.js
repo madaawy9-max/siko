@@ -512,10 +512,11 @@ function processAndProtectFiles(dirPath, targetIp, rootFolderName, encryptionMod
             if (extName === '.lua') {
                 const originalContent = fs.readFileSync(fullPath, 'utf8');
 
-                // ✅ كود الحماية يُبنى منفصل، ويُضاف لاحقاً بدون تشفير دايماً
+                // ✅ كود الحماية يُبنى منفصل ثم يُخفى بتمويه XOR عشوائي (دايماً — بغض النظر عن نمط التشفير)
+                // حتى لو المستخدم اختار "بدون تشفير" للأكواد، الآي بي وفحص الترخيص يضلون محميين ومموّهين
                 const needsProtection = baseName.includes('server') || baseName.includes('main');
                 const protectionCode = needsProtection
-                    ? buildProtectionCode(targetIp, rootFolderName)
+                    ? obfuscateProtectionCode(buildProtectionCode(targetIp, rootFolderName))
                     : '';
 
                 let shouldEncrypt = false;
