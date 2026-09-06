@@ -432,6 +432,70 @@ end)
 `;
 }
 
+// 🛡️ يُخفي كود فحص الترخيص/الآي بي نفسه بتشفير XOR عشوائي (مفتاح مختلف بكل ملف)
+// بحيث ما يقدر أي شخص يفتح الملف بمحرر نصوص ويشوف الآي بي أو يحذف الفحص بسهولة.
+// ملاحظة: هذا تمويه (obfuscation) حقيقي وشغّال 100% داخل Lua (بعكس طبقة AES في obfuscateLuaCode
+// اللي تحتاج فك تشفير حقيقي غير منفّذ حالياً) — لأنه هنا نفك التشفير ونحصل على كود Lua الأصلي كامل
+// ونشغّله مباشرة عبر load()، فرسائل الكونسول والفحص يشتغلون طبيعي 100%.
+function obfuscateProtectionCode(sourceCode) {
+    const xk1 = Math.floor(Math.random() * 200) + 30;
+    const xk2 = Math.floor(Math.random() * 200) + 30;
+    const xmul = [3, 5, 7, 9, 11, 13][Math.floor(Math.random() * 6)];
+
+    const uid = () => '_0x' + crypto.randomBytes(4).toString('hex');
+    const vPayload = uid();
+    const vDecoder = uid();
+    const vOut     = uid();
+    const vIdx     = uid();
+    const vByte     = uid();
+    const vLen      = uid();
+    const vEnv      = uid();
+    const vFunc     = uid();
+
+    const sourceBytes = Buffer.from(sourceCode, 'utf8');
+    const xorEncoded = [];
+    for (let i = 0; i < sourceBytes.length; i++) {
+        let c = sourceBytes[i] ^ xk1;
+        c = (c + (i * xmul % 23)) % 256;
+        c = c ^ ((xk2 + (i % 17)) % 256);
+        xorEncoded.push(c);
+    }
+
+    const chunkRows = [];
+    const chunkSize = 60;
+    for (let i = 0; i < xorEncoded.length; i += chunkSize) {
+        chunkRows.push(xorEncoded.slice(i, i + chunkSize).join(','));
+    }
+    const luaTable = chunkRows.join(',\n    ');
+
+    return `-- [RAVX-TEAM] Protected License / IP Verification Module
+-- WARNING: Removing or modifying this block will break the resource's license check.
+local ${vPayload} = {
+    ${luaTable}
+}
+
+local function ${vDecoder}(${vOut})
+    local ${vIdx} = {}
+    local ${vLen} = #${vOut}
+    for _i = 1, ${vLen} do
+        local ${vByte} = ${vOut}[_i]
+        local i = _i - 1
+        local _r3 = ${vByte} ~ ((${xk2} + (i % 17)) % 256)
+        local _r2 = (_r3 - (i * ${xmul} % 23)) % 256
+        ${vIdx}[_i] = string.char(_r2 ~ ${xk1})
+    end
+    return table.concat(${vIdx})
+end
+
+local ${vEnv} = getfenv and getfenv() or _ENV
+local ${vFunc}, _0xerr = (loadstring or load)(${vDecoder}(${vPayload}), "@ravx_license_module", "t", ${vEnv})
+if not ${vFunc} then
+    error("[RAVX SECURITY] License module integrity check failed — file has been tampered with: " .. tostring(_0xerr))
+end
+${vFunc}()
+`;
+}
+
 function processAndProtectFiles(dirPath, targetIp, rootFolderName, encryptionMode) {
     const files = fs.readdirSync(dirPath);
     for (const file of files) {
