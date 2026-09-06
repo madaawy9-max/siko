@@ -505,6 +505,27 @@ end)
     }
 }
 
+// 🗑️ حذف آمن لرسالة العضو مع تشخيص حقيقي للسبب لو فشل الحذف
+async function safeDeleteUserMessage(message) {
+    try {
+        if (!message.deletable) {
+            const me = message.guild?.members?.me;
+            const perms = me ? message.channel.permissionsFor(me) : null;
+            if (perms && !perms.has(PermissionFlagsBits.ManageMessages)) {
+                console.error(`[RAVX BOT] ⚠️ ما عندي صلاحية "Manage Messages" في القناة #${message.channel.name || message.channel.id} — لازم تعطيني هذي الصلاحية عشان أقدر أحذف ملفات الأعضاء تلقائياً.`);
+            } else {
+                console.error('[RAVX BOT] ⚠️ الرسالة غير قابلة للحذف (deletable=false) لسبب غير معروف.');
+            }
+            return false;
+        }
+        await message.delete();
+        return true;
+    } catch (err) {
+        console.error('[RAVX BOT] ❌ فشل حذف رسالة الملف:', err.message);
+        return false;
+    }
+}
+
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -519,6 +540,17 @@ client.once(Events.ClientReady, async () => {
     try {
         const channel = await client.channels.fetch(PANEL_CHANNEL_ID).catch(() => null);
         if (channel) {
+            const me = channel.guild?.members?.me;
+            const perms = me ? channel.permissionsFor(me) : null;
+            if (perms && !perms.has(PermissionFlagsBits.ManageMessages)) {
+                console.error('\n======================================================');
+                console.error('⚠️ [RAVX BOT] تنبيه هام: البوت ما عنده صلاحية "Manage Messages" في روم البانل!');
+                console.error('⚠️ بدون هذي الصلاحية، البوت ما راح يقدر يحذف ملفات الأعضاء بعد رفعها تلقائياً.');
+                console.error('⚠️ الحل: روح لإعدادات السيرفر → الأدوار → أعط رتبة البوت صلاحية "Manage Messages"،');
+                console.error('⚠️ أو تأكد إن صلاحيات الروم نفسه ما تمنع البوت من هالصلاحية.');
+                console.error('======================================================\n');
+            }
+
             const messages = await channel.messages.fetch({ limit: 10 }).catch(() => null);
             if (messages && messages.size > 0) {
                 await channel.bulkDelete(messages).catch(() => {});
@@ -753,12 +785,20 @@ client.on('interactionCreate', async interaction => {
             }
 
             if (isUserBusy(userId)) {
+                const startedAt = activeEncryptOperations.get(userId);
+                const remainingMin = Math.max(1, Math.ceil((OPERATION_TIMEOUT_MS - (Date.now() - startedAt)) / 60000));
+                const cancelRow = new ActionRowBuilder().addComponents(
+                    new ButtonBuilder().setCustomId('btn_cancel_stuck_operation').setLabel('🔓 إلغاء العملية العالقة وبدء عملية جديدة').setStyle(ButtonStyle.Danger)
+                );
                 return await interaction.reply({
                     embeds: [ravxEmbed({
                         color: RAVX_COLORS.warning,
                         title: '⏳ عندك عملية شغالة حالياً',
-                        description: 'لديك عملية تشفير قيد التنفيذ حالياً.\nأكمل العملية الحالية أو انتظر حتى تنتهي مهلتها قبل بدء عملية جديدة.'
+                        description:
+                            `لديك عملية تشفير قيد التنفيذ حالياً.\nأكمل العملية الحالية، أو انتظر حتى تنتهي مهلتها تلقائياً خلال **${remainingMin} دقيقة** تقريباً.\n\n` +
+                            `إذا كنت متأكد إن العملية علقت (Bug) ومو شغالة فعلياً، اضغط الزر بالأسفل لإلغائها وبدء عملية جديدة.`
                     })],
+                    components: [cancelRow],
                     flags: MessageFlags.Ephemeral
                 });
             }
@@ -809,6 +849,18 @@ client.on('interactionCreate', async interaction => {
                     color: RAVX_COLORS.gold,
                     title: '📩 شكراً لاهتمامك بالاشتراك!',
                     description: 'تواصل مع فريق الإدارة مباشرة عشان نكمل معاك تفاصيل الدفع وتفعيل الباقة.\n-# افتح تذكرة دعم أو راسل الإدارة مباشرة'
+                })],
+                flags: MessageFlags.Ephemeral
+            });
+        }
+
+        if (interaction.customId === 'btn_cancel_stuck_operation') {
+            unlockUserOperation(userId);
+            return await interaction.reply({
+                embeds: [ravxEmbed({
+                    color: RAVX_COLORS.success,
+                    title: '✅ تم إلغاء العملية العالقة',
+                    description: 'تقدر الحين تضغط "🔐 بدء التشفير" من جديد وتبدأ عملية جديدة.'
                 })],
                 flags: MessageFlags.Ephemeral
             });
@@ -1076,7 +1128,7 @@ client.on('interactionCreate', async interaction => {
 
             // التحقق من صيغة الملف
             if (!attachment.name.toLowerCase().endsWith('.zip')) {
-                await userMessage.delete().catch(() => {});
+                await safeDeleteUserMessage(userMessage);
                 unlockUserOperation(userId);
                 return await interaction.editReply({
                     embeds: [ravxEmbed({
@@ -1123,13 +1175,15 @@ client.on('interactionCreate', async interaction => {
 
                 // 🔒 التحميل نجح — نحذف رسالة العضو من الروم فوراً الآن قبل أي معالجة إضافية
                 // حتى ما يقدر أي عضو ثاني يشوف الملف أو يحمّله
-                await userMessage.delete().catch(() => {});
+                const wasDeleted = await safeDeleteUserMessage(userMessage);
 
                 await interaction.editReply({
                     embeds: [ravxEmbed({
                         color: RAVX_COLORS.primary,
                         title: '🛠️ جاري المعالجة...',
-                        description: 'تم تحميل الملف وحذفه من الروم بنجاح.\nجاري فك الضغط وتشفير الأكواد بمحرك V8... برجاء الانتظار ثوانٍ.'
+                        description: wasDeleted
+                            ? 'تم تحميل الملف وحذفه من الروم بنجاح.\nجاري فك الضغط وتشفير الأكواد بمحرك V8... برجاء الانتظار ثوانٍ.'
+                            : '⚠️ **تنبيه:** تم تحميل الملف، لكن البوت ما قدر يحذف رسالتك من الروم — على الأغلب البوت ناقصه صلاحية "Manage Messages" في هذي القناة.\nيرجى حذف رسالتك يدوياً الحين، وإبلاغ الإدارة بإعطاء البوت الصلاحية.\nجاري فك الضغط وتشفير الأكواد بمحرك V8...'
                     })],
                     components: []
                 }).catch(() => {});
