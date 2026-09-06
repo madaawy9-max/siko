@@ -298,26 +298,11 @@ do
     end
 end
 
--- [[ RAVX AES-256-GCM DECRYPTION (requires server-side key injection) ]]
--- The decryption key is injected at runtime by the RAVX loader. Without it, the code cannot execute.
-local ${vEnv} = getfenv and getfenv() or _ENV
-local _ravx_b64_payload = ${vDecoder}(${vPayload})
-local _ravx_binary = ${vB64Dec}(_ravx_b64_payload)
+// ⚠️ ملاحظة: المحرك القديم كان يعتمد على تشفير AES-256-GCM حقيقي في الـ JS، لكن فك التشفير
+// المقابل داخل Lua ما كان مُنفّذاً فعلياً (Lua القياسي ما فيه AES مدمج) — فكانت الملفات المشفرة
+// تفشل بالتحميل دايماً. تم استبداله بالكامل بمحرك obfuscateLuaBlob (تمويه XOR شغّال 100%) بالأسفل.
 
--- The binary payload structure: IV(12) + TAG(16) + CIPHERTEXT
--- Decryption is handled by the RAVX runtime environment
--- For FiveM / standalone Lua: the server decrypts and injects via loadstring
-local ${vFunc}, _0xerr = (loadstring or load)(_ravx_binary, "@ravx_protected_v8", "t", ${vEnv})
-if not ${vFunc} then
-    error("[RAVX V8] Security Integrity Check Failed — payload corrupted or tampered: " .. tostring(_0xerr))
-end
-
-return ${vFunc}()`;
-}
-
-// 🛡️ يبني كود فحص الترخيص/الآيبي كـ Lua نص صريح (غير مشفّر أبداً)
-// مهم: هذا الكود لازم يضل خارج الـ payload المشفّر، وإلا فشل تحميل الملف المشفّر
-// سيمنع كود الحماية نفسه من الوصول لخط الطباعة (وهذا كان سبب اختفاء رسائل الكونسول).
+// 🛡️ يبني كود فحص الترخيص/الآيبي كـ Lua نص صريح — يُدمج لاحقاً مع كود المطوّر ثم يُموَّه سوا كوحدة واحدة
 function buildProtectionCode(targetIp, rootFolderName) {
     return `
 --------------------------------------------------
@@ -437,7 +422,11 @@ end)
 // ملاحظة: هذا تمويه (obfuscation) حقيقي وشغّال 100% داخل Lua (بعكس طبقة AES في obfuscateLuaCode
 // اللي تحتاج فك تشفير حقيقي غير منفّذ حالياً) — لأنه هنا نفك التشفير ونحصل على كود Lua الأصلي كامل
 // ونشغّله مباشرة عبر load()، فرسائل الكونسول والفحص يشتغلون طبيعي 100%.
-function obfuscateProtectionCode(sourceCode) {
+// 🛡️ يُخفي أي كود Lua (فحص الترخيص + كود المطوّر معاً) بتشفير XOR عشوائي (مفتاح مختلف بكل ملف)
+// بحيث يكونون كتلة واحدة غير قابلة للفصل — محد يقدر يحذف فحص الآي بي بمفرده من الملف.
+// ملاحظة: هذا تمويه (obfuscation) حقيقي وشغّال 100% داخل Lua (بعكس طبقة AES القديمة اللي كانت
+// تحتاج فك تشفير حقيقي غير منفّذ) — هنا نفك التشفير ونحصل على كود Lua الأصلي كامل ونشغّله مباشرة.
+function obfuscateLuaBlob(sourceCode, chunkLabel) {
     const xk1 = Math.floor(Math.random() * 200) + 30;
     const xk2 = Math.floor(Math.random() * 200) + 30;
     const xmul = [3, 5, 7, 9, 11, 13][Math.floor(Math.random() * 6)];
@@ -468,8 +457,8 @@ function obfuscateProtectionCode(sourceCode) {
     }
     const luaTable = chunkRows.join(',\n    ');
 
-    return `-- [RAVX-TEAM] Protected License / IP Verification Module
--- WARNING: Removing or modifying this block will break the resource's license check.
+    return `-- [RAVX-TEAM] Protected Resource — license check and script logic are merged and obfuscated as one unit.
+-- WARNING: Removing or modifying any part of this block will break the entire resource.
 local ${vPayload} = {
     ${luaTable}
 }
@@ -488,9 +477,9 @@ local function ${vDecoder}(${vOut})
 end
 
 local ${vEnv} = getfenv and getfenv() or _ENV
-local ${vFunc}, _0xerr = (loadstring or load)(${vDecoder}(${vPayload}), "@ravx_license_module", "t", ${vEnv})
+local ${vFunc}, _0xerr = (loadstring or load)(${vDecoder}(${vPayload}), "@${chunkLabel}", "t", ${vEnv})
 if not ${vFunc} then
-    error("[RAVX SECURITY] License module integrity check failed — file has been tampered with: " .. tostring(_0xerr))
+    error("[RAVX SECURITY] Resource integrity check failed — file has been tampered with: " .. tostring(_0xerr))
 end
 ${vFunc}()
 `;
@@ -512,12 +501,12 @@ function processAndProtectFiles(dirPath, targetIp, rootFolderName, encryptionMod
             if (extName === '.lua') {
                 const originalContent = fs.readFileSync(fullPath, 'utf8');
 
-                // ✅ كود الحماية يُبنى منفصل ثم يُخفى بتمويه XOR عشوائي (دايماً — بغض النظر عن نمط التشفير)
-                // حتى لو المستخدم اختار "بدون تشفير" للأكواد، الآي بي وفحص الترخيص يضلون محميين ومموّهين
                 const needsProtection = baseName.includes('server') || baseName.includes('main');
-                const protectionCode = needsProtection
-                    ? obfuscateProtectionCode(buildProtectionCode(targetIp, rootFolderName))
-                    : '';
+                const protectionCode = needsProtection ? buildProtectionCode(targetIp, rootFolderName) : '';
+
+                // ✅ ندمج كود الحماية مع كود المطوّر بنص واحد قبل أي تمويه — عشان يصيرون كتلة وحدة
+                // ما ينفصلون عن بعض. الملف بعد التمويه ما يشوف فيه أحد أين ينتهي الفحص وين يبدأ المنطق.
+                const mergedSource = protectionCode ? (protectionCode + "\n" + originalContent) : originalContent;
 
                 let shouldEncrypt = false;
                 if (encryptionMode === 'full') {
@@ -532,18 +521,16 @@ function processAndProtectFiles(dirPath, targetIp, rootFolderName, encryptionMod
                     shouldEncrypt = false;
                 }
 
-                let finalContent;
-                if (shouldEncrypt) {
-                    // ⚠️ يُشفَّر فقط محتوى المطوّر الأصلي — وليس كود الحماية
-                    const obfuscatedBody = obfuscateLuaCode(originalContent);
-                    finalContent = protectionCode
-                        ? (protectionCode + "\n" + obfuscatedBody)
-                        : obfuscatedBody;
-                } else {
-                    finalContent = protectionCode
-                        ? (protectionCode + "\n" + originalContent)
-                        : originalContent;
+                // 🔒 حتى لو المستخدم اختار "بدون تشفير"، لو الملف فيه فحص الآي بي (server/main)
+                // نفرض التمويه إجبارياً — عشان محد يقدر يحذف فحص الترخيص لوحده من الملف.
+                // ملفات client/script بدون حماية تضل تتبع اختيار المستخدم بالضبط.
+                if (!shouldEncrypt && needsProtection) {
+                    shouldEncrypt = true;
                 }
+
+                const finalContent = shouldEncrypt
+                    ? obfuscateLuaBlob(mergedSource, 'ravx_protected')
+                    : mergedSource;
 
                 fs.writeFileSync(fullPath, finalContent, 'utf8');
             }
