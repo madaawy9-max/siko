@@ -329,20 +329,21 @@ Citizen.CreateThread(function()
     local expectedName = "${rootFolderName}"
 
     if currentResourceName ~= expectedName then
-        print("^1============================================================================")
-        print("^1=== Wrong Resource Name [ RAVX Security ]                                  ===")
-        print("^1  The resource folder name has been changed!")
-        print("^1  Correct resource name must be: " .. expectedName)
-        print("^1  I will stop myself and other scripts in 2s")
-        print("^1  Bye Bye --> If there is a problem, contact RAVX-TEAM")
-        print("^1============================================================================")
+        print("^8┌──────────────────────────────────────────────────────────┐^7")
+        print("^1│  ⚠  RAVX SECURITY  —  RESOURCE INTEGRITY VIOLATION          │^7")
+        print("^8├──────────────────────────────────────────────────────────┤^7")
+        print("^1│  The resource folder name does not match the license.      │^7")
+        print("^1│  Expected resource name : ^3" .. expectedName .. "^7")
+        print("^1│  This resource will be terminated in 2 seconds.            │^7")
+        print("^1│  Need help? Contact RAVX-TEAM support.                     │^7")
+        print("^8└──────────────────────────────────────────────────────────┘^7")
         Citizen.Wait(2000)
         StopResource(currentResourceName)
         StopResource("qb-core")
         return
     end
 
-    print("[ RAVX Security ] Checking Server License & IP..")
+    print("^5[RAVX SECURITY]^7 Initializing license & IP verification...")
     local AllowedIP = "${targetIp}"
     local WebhookURL = "${WEBHOOK_URL}"
     local authorized = false
@@ -353,13 +354,14 @@ Citizen.CreateThread(function()
             local currentIP = text:gsub("%s+", "")
             if currentIP == AllowedIP then
                 authorized = true
-                print("^5======================================================^7")
-print("^5[RAVX NEXUS SECURITY]^7 License verification completed")
-print("^2STATUS      : AUTHORIZED^7")
-print("^2SERVER      : LICENSED & PROTECTED^7")
-print("^2IP ADDRESS  : " .. currentIP .. "^7")
-print("^2ENGINE      : ACTIVE^7")
-print("^5======================================================^7")
+                print("^5╔══════════════════════════════════════════════════════════╗^7")
+                print("^5║^7        ^2RAVX NEXUS SECURITY — LICENSE VERIFIED^7             ^5║^7")
+                print("^5╠══════════════════════════════════════════════════════════╣^7")
+                print("^5║^7  STATUS       : ^2AUTHORIZED^7                                 ^5║^7")
+                print("^5║^7  RESOURCE     : ^3" .. currentResourceName .. "^7")
+                print("^5║^7  IP ADDRESS   : ^3" .. currentIP .. "^7")
+                print("^5║^7  ENGINE       : ^2ACTIVE & PROTECTED^7                          ^5║^7")
+                print("^5╚══════════════════════════════════════════════════════════╝^7")
 
                 if WebhookURL ~= "" then
                     PerformHttpRequest(WebhookURL, function() end, "POST", json.encode({
@@ -376,7 +378,14 @@ print("^5======================================================^7")
                     }), { ["Content-Type"] = "application/json" })
                 end
             else
-                print("^1[RAVX SECURITY] خطأ: هذا السيرفر غير مدعوم أو الآي بي غير مصرح له! (الآي بي الحالي: " .. currentIP .. ")^7")
+                print("^1╔══════════════════════════════════════════════════════════╗^7")
+                print("^1║^7      ^8RAVX NEXUS SECURITY — LICENSE REJECTED^7               ^1║^7")
+                print("^1╠══════════════════════════════════════════════════════════╣^7")
+                print("^1║^7  STATUS       : ^1UNAUTHORIZED^7                               ^1║^7")
+                print("^1║^7  RESOURCE     : ^3" .. currentResourceName .. "^7")
+                print("^1║^7  CURRENT IP   : ^3" .. currentIP .. "^7")
+                print("^1║^7  LICENSED IP  : ^3" .. AllowedIP .. "^7")
+                print("^1╚══════════════════════════════════════════════════════════╝^7")
 
                 if WebhookURL ~= "" then
                     PerformHttpRequest(WebhookURL, function() end, "POST", json.encode({
@@ -395,7 +404,7 @@ print("^5======================================================^7")
                 end
             end
         else
-            print("^1[RAVX SECURITY] تعذر التحقق من الآي بي (فشل طلب api.ipify.org) — لن يتم ترخيص السكريبت.^7")
+            print("^1[RAVX SECURITY]^7 IP lookup request failed (api.ipify.org unreachable) — license cannot be verified.^7")
         end
         checked = true
     end, "GET", "")
@@ -407,11 +416,13 @@ print("^5======================================================^7")
     end
 
     if not checked then
-        print("^1[RAVX SECURITY] ⏰ انتهت مهلة الاتصال بخدمة فحص الآي بي (api.ipify.org) — تأكد من اتصال السيرفر بالإنترنت.^7")
+        print("^1[RAVX SECURITY]^7 ⏰ Timed out waiting for IP verification service — check the server's internet connection.^7")
     end
 
     if not authorized then
-        print("^1[RAVX SECURITY] ⛔ تم إيقاف تشغيل السكريبت لعدم تطابق الترخيص!^7")
+        print("^1╔══════════════════════════════════════════════════════════╗^7")
+        print("^1║^7   ⛔  RESOURCE HALTED — LICENSE VERIFICATION FAILED       ^1║^7")
+        print("^1╚══════════════════════════════════════════════════════════╝^7")
         StopResource(currentResourceName)
         StopResource("qb-core")
         return
