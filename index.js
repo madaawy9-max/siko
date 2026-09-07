@@ -66,10 +66,6 @@ async function deleteUploadMessage(message) {
         await new Promise(r => setTimeout(r, 1000));
     }
 }
-        } catch (e) {}
-        await new Promise(r => setTimeout(r, 500));
-    }
-}
 
 const userSessionData = new Map();
 const adminGrantSession = new Map();
