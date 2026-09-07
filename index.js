@@ -56,12 +56,16 @@ try {
 
 async function deleteUploadMessage(message) {
     if (!message) return;
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 8; i++) {
         try {
             if (message.deletable) {
                 await message.delete();
                 return;
             }
+        } catch (e) {}
+        await new Promise(r => setTimeout(r, 1000));
+    }
+}
         } catch (e) {}
         await new Promise(r => setTimeout(r, 500));
     }
@@ -1073,7 +1077,9 @@ client.on('interactionCreate', async interaction => {
                 if (userMessage && userMessage.deletable) {
                     await userMessage.delete().catch(async () => {
                         await new Promise(r => setTimeout(r, 1000));
-                        await deleteUploadMessage(userMessage);
+                        // انتظار بسيط حتى يتأكد Discord من حفظ المرفق ثم الحذف
+                await new Promise(r => setTimeout(r, 2000));
+                await deleteUploadMessage(userMessage);
                     });
                 }
                 return await interaction.editReply({
@@ -1118,7 +1124,9 @@ client.on('interactionCreate', async interaction => {
                 if (userMessage && userMessage.deletable) {
                     await userMessage.delete().catch(async () => {
                         await new Promise(r => setTimeout(r, 1000));
-                        await deleteUploadMessage(userMessage);
+                        // انتظار بسيط حتى يتأكد Discord من حفظ المرفق ثم الحذف
+                await new Promise(r => setTimeout(r, 2000));
+                await deleteUploadMessage(userMessage);
                     });
                 }
 
@@ -1231,7 +1239,9 @@ client.on('interactionCreate', async interaction => {
                 if (userMessage && userMessage.deletable) {
                     await userMessage.delete().catch(async () => {
                         await new Promise(r => setTimeout(r, 1000));
-                        await deleteUploadMessage(userMessage);
+                        // انتظار بسيط حتى يتأكد Discord من حفظ المرفق ثم الحذف
+                await new Promise(r => setTimeout(r, 2000));
+                await deleteUploadMessage(userMessage);
                     });
                 }
                 }
