@@ -53,6 +53,20 @@ try {
     console.error('ملاحظة خادم الويب:', e.message);
 }
 
+
+async function deleteUploadMessage(message) {
+    if (!message) return;
+    for (let i = 0; i < 5; i++) {
+        try {
+            if (message.deletable) {
+                await message.delete();
+                return;
+            }
+        } catch (e) {}
+        await new Promise(r => setTimeout(r, 500));
+    }
+}
+
 const userSessionData = new Map();
 const adminGrantSession = new Map();
 
@@ -1050,13 +1064,16 @@ client.on('interactionCreate', async interaction => {
             const userMessage = collected.first();
             const attachment = userMessage.attachments.first();
 
+            // تحميل الملف ثم حذف رسالة الرفع مباشرة
+
+
             // التحقق من صيغة الملف
             if (!attachment.name.toLowerCase().endsWith('.zip')) {
                 // حذف رسالة الرفع فوراً بعد اكتمال التحميل مع إعادة محاولة
                 if (userMessage && userMessage.deletable) {
                     await userMessage.delete().catch(async () => {
                         await new Promise(r => setTimeout(r, 1000));
-                        await userMessage.delete().catch(() => {});
+                        await deleteUploadMessage(userMessage);
                     });
                 }
                 return await interaction.editReply({
@@ -1101,7 +1118,7 @@ client.on('interactionCreate', async interaction => {
                 if (userMessage && userMessage.deletable) {
                     await userMessage.delete().catch(async () => {
                         await new Promise(r => setTimeout(r, 1000));
-                        await userMessage.delete().catch(() => {});
+                        await deleteUploadMessage(userMessage);
                     });
                 }
 
@@ -1214,7 +1231,7 @@ client.on('interactionCreate', async interaction => {
                 if (userMessage && userMessage.deletable) {
                     await userMessage.delete().catch(async () => {
                         await new Promise(r => setTimeout(r, 1000));
-                        await userMessage.delete().catch(() => {});
+                        await deleteUploadMessage(userMessage);
                     });
                 }
                 }
