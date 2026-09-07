@@ -1052,7 +1052,13 @@ client.on('interactionCreate', async interaction => {
 
             // التحقق من صيغة الملف
             if (!attachment.name.toLowerCase().endsWith('.zip')) {
-                await userMessage.delete().catch(() => {});
+                // حذف رسالة الرفع فوراً بعد اكتمال التحميل مع إعادة محاولة
+                if (userMessage && userMessage.deletable) {
+                    await userMessage.delete().catch(async () => {
+                        await new Promise(r => setTimeout(r, 1000));
+                        await userMessage.delete().catch(() => {});
+                    });
+                }
                 return await interaction.editReply({
                     content: '❌ **الملف المرفوع ليس بصيغة `.zip`!** يرجى ضغط مجلد السكربت في ملف zip والمحاولة من جديد.',
                     components: []
@@ -1091,7 +1097,13 @@ client.on('interactionCreate', async interaction => {
 
                 // 🛡️ نحذف رسالة العضو فوراً بمجرد اكتمال التحميل — قبل فك الضغط والتشفير (الخطوات الأطول)
                 // هذا يحصر فترة التعرض بوقت التحميل فقط بدل طول عملية المعالجة كاملة
-                await userMessage.delete().catch(() => {});
+                // حذف رسالة الرفع فوراً بعد اكتمال التحميل مع إعادة محاولة
+                if (userMessage && userMessage.deletable) {
+                    await userMessage.delete().catch(async () => {
+                        await new Promise(r => setTimeout(r, 1000));
+                        await userMessage.delete().catch(() => {});
+                    });
+                }
 
                 // 2. فك ضغط الملف
                 const inputZip = new AdmZip(inputZipPath);
@@ -1198,7 +1210,13 @@ client.on('interactionCreate', async interaction => {
 
                 // حذف رسالة الملف حتى عند حدوث خطأ أثناء المعالجة
                 if (userMessage) {
-                    await userMessage.delete().catch(() => {});
+                    // حذف رسالة الرفع فوراً بعد اكتمال التحميل مع إعادة محاولة
+                if (userMessage && userMessage.deletable) {
+                    await userMessage.delete().catch(async () => {
+                        await new Promise(r => setTimeout(r, 1000));
+                        await userMessage.delete().catch(() => {});
+                    });
+                }
                 }
 
                 if (fs.existsSync(tempWorkingDir)) {
