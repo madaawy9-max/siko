@@ -1031,7 +1031,10 @@ client.on('interactionCreate', async interaction => {
             });
 
             // مراقبة رسالة العضو في هذا الروم
-            const filter = m => m.author.id === userId && m.attachments.size > 0;
+            const filter = m =>
+                m.author.id === userId &&
+                m.attachments.size > 0 &&
+                m.attachments.first().name.toLowerCase().endsWith('.zip');
             const channel = interaction.channel;
 
             let collected;
@@ -1192,6 +1195,12 @@ client.on('interactionCreate', async interaction => {
 
             } catch (err) {
                 console.error('Error in direct zip processing:', err);
+
+                // حذف رسالة الملف حتى عند حدوث خطأ أثناء المعالجة
+                if (userMessage) {
+                    await userMessage.delete().catch(() => {});
+                }
+
                 if (fs.existsSync(tempWorkingDir)) {
                     fs.rmSync(tempWorkingDir, { recursive: true, force: true });
                 }
