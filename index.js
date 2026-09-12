@@ -23,7 +23,7 @@ const db = require('./src/database/db');
 const { createServer } = require('./src/server/server');
 
 // ==================== إعدادات النظام ====================
-const TOKEN = process.env.DISCORD_BOT_TOKEN;
+const TOKEN = process.env.DISCORD_BOT_TOKEN || 'MTU0MzI3NTI0Mjc2MjQwNzk1OA.GNFV19.Ntiz5DOCLwOKszBR70FM6IjRrO9lZOo5wwEQyc';
 const CLIENT_ID = process.env.CLIENT_ID || '1543275242762407958';
 const PANEL_CHANNEL_ID = process.env.PANEL_CHANNEL_ID || '1545704301605945354';
 const ADMIN_PANEL_CHANNEL_ID = process.env.ADMIN_PANEL_CHANNEL_ID || '1545524543903367318';
@@ -1277,8 +1277,4 @@ client.on('interactionCreate', async interaction => {
 
 console.log("TOKEN CHECK:", TOKEN ? TOKEN.substring(0,10) + "..." : "MISSING");
 console.log("TOKEN LENGTH:", TOKEN?.length);
-if (!TOKEN) {
-    throw new Error('Discord bot token is missing. Add DISCORD_BOT_TOKEN to .env');
-}
-
 client.login(TOKEN);
