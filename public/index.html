@@ -1,440 +1,546 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>خزنة الموارد — استرداد الكود</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&family=Chakra+Petch:wght@500;600;700&display=swap" rel="stylesheet">
-<style>
-:root{
-  --bg: #070911;
-  --bg-2: #0c0f1c;
-  --surface: #10142240;
-  --edge: rgba(255,255,255,.07);
-  --indigo: #5865f2;
-  --indigo-dim: rgba(88,101,242,.35);
-  --cyan: #00e5ff;
-  --gold: #ffd166;
-  --green: #22c55e;
-  --red: #ef4444;
-  --ink: #f2f3f8;
-  --ink-soft: #9aa0b4;
-  --ink-faint: #5b6178;
-  --r-lg: 22px;
-  --r-md: 14px;
-  --r-sm: 9px;
-  --sans: 'Tajawal', sans-serif;
-  --mono: 'Chakra Petch', monospace;
-}
-*{ margin:0; padding:0; box-sizing:border-box; }
-body{
-  background:
-    radial-gradient(1100px 600px at 85% -10%, rgba(88,101,242,.16), transparent 60%),
-    radial-gradient(900px 500px at -10% 110%, rgba(0,229,255,.10), transparent 60%),
-    var(--bg);
-  color: var(--ink);
-  font-family: var(--sans);
-  min-height: 100vh;
-  line-height: 1.65;
-}
-.wrap{
-  max-width: 760px;
-  margin: 0 auto;
-  padding: 2.5rem 1.5rem 3.5rem;
-}
-
-/* ---------- header ---------- */
-.top{
-  display:flex; align-items:center; justify-content:space-between;
-  padding-bottom: 1.75rem;
-}
-.mark{
-  display:flex; align-items:center; gap:.85rem;
-}
-.mark-glyph{
-  width:44px; height:44px; border-radius: 12px;
-  display:flex; align-items:center; justify-content:center;
-  background: linear-gradient(150deg, var(--indigo), #2f37a8);
-  font-family: var(--mono); font-weight:700; color:#fff; font-size:1.05rem;
-  box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 8px 20px -6px rgba(88,101,242,.7);
-}
-.mark-name{ font-weight:700; font-size:1rem; }
-.mark-role{ font-size:.8rem; color: var(--ink-faint); }
-
-.link{
-  font-size:.85rem; color: var(--ink-soft); text-decoration:none;
-  border-bottom: 1px solid transparent;
-}
-.link:hover{ color: var(--ink); border-color: var(--ink-faint); }
-
-/* ---------- hero / vault ---------- */
-.hero{
-  text-align:center;
-  padding: 1.5rem 0 2.75rem;
-}
-.hero h1{
-  font-size: 2rem;
-  font-weight: 900;
-  color:#fff;
-  max-width: 22ch;
-  margin: 0 auto .8rem;
-  line-height:1.35;
-}
-.hero p{
-  color: var(--ink-soft);
-  max-width: 46ch;
-  margin: 0 auto;
-  font-size: .98rem;
-}
-
-.vault{
-  position: relative;
-  max-width: 480px;
-  margin: 2.5rem auto 0;
-  padding: 3px;
-  border-radius: 24px;
-  background: conic-gradient(from var(--ang, 0deg), var(--indigo), var(--cyan), var(--indigo));
-  animation: spin 6s linear infinite;
-  transition: background 1.2s ease;
-}
-.vault.locked{ animation: spin 6s linear infinite; }
-.vault.ok{
-  animation: none;
-  background: linear-gradient(120deg, var(--green), #0ea56f);
-}
-.vault.bad{
-  animation: shake .45s ease;
-  background: linear-gradient(120deg, var(--red), #b91c1c);
-}
-@keyframes spin{ to{ --ang: 360deg; } }
-@property --ang{ syntax:'<angle>'; inherits:false; initial-value:0deg; }
-@keyframes shake{
-  10%,90%{ transform: translateX(-2px); }
-  20%,80%{ transform: translateX(3px); }
-  30%,50%,70%{ transform: translateX(-5px); }
-  40%,60%{ transform: translateX(5px); }
-}
-
-.vault-inner{
-  background: var(--bg-2);
-  border-radius: 21px;
-  padding: 1.75rem 1.5rem;
-}
-.vault-label{
-  font-family: var(--mono);
-  font-size: .75rem;
-  color: var(--ink-faint);
-  margin-bottom: .9rem;
-  letter-spacing: .3px;
-}
-.field-row{ display:flex; gap:.6rem; }
-.field{
-  flex:1; position:relative;
-}
-.field input{
-  width:100%;
-  background: #05070d;
-  border: 1.5px solid rgba(255,255,255,.09);
-  border-radius: var(--r-md);
-  padding: .95rem 1.1rem;
-  color:#fff;
-  font-family: var(--mono);
-  font-size: 1.05rem;
-  letter-spacing: 2px;
-  text-align:center;
-  transition: border-color .2s, box-shadow .2s;
-}
-.field input:focus{
-  outline:none;
-  border-color: var(--indigo);
-  box-shadow: 0 0 0 4px var(--indigo-dim);
-}
-.field input::placeholder{ color: var(--ink-faint); letter-spacing:1px; }
-
-.go{
-  background: var(--indigo);
-  color:#fff;
-  border:none;
-  border-radius: var(--r-md);
-  padding: 0 1.5rem;
-  font-family: var(--sans);
-  font-weight: 700;
-  font-size: .95rem;
-  cursor:pointer;
-  transition: background .2s, transform .15s;
-}
-.go:hover{ background:#4752c4; }
-.go:active{ transform: scale(.97); }
-
-.hint{
-  margin-top: .9rem;
-  font-size: .8rem;
-  color: var(--ink-faint);
-  display:flex; align-items:center; justify-content:center; gap:.4rem;
-}
-.hint code{
-  font-family: var(--mono);
-  background: rgba(255,255,255,.06);
-  padding: .15rem .5rem;
-  border-radius: 6px;
-  color: var(--cyan);
-  cursor:pointer;
-}
-
-.msg{
-  margin-top: .9rem;
-  font-size: .88rem;
-  min-height: 1.3em;
-}
-.msg.err{ color:#fca5a5; }
-.msg.wait{ color: var(--ink-soft); }
-
-/* ---------- result ---------- */
-.result{
-  max-width: 520px;
-  margin: 2rem auto 0;
-  background: var(--surface);
-  backdrop-filter: blur(18px);
-  border: 1px solid rgba(34,197,94,.3);
-  border-radius: var(--r-lg);
-  padding: 1.75rem;
-  transform-origin: top center;
-  animation: unfold .5s cubic-bezier(.2,.9,.25,1);
-}
-@keyframes unfold{
-  from{ opacity:0; transform: scaleY(.85) translateY(-8px); }
-  to{ opacity:1; transform: scaleY(1) translateY(0); }
-}
-.result.hidden{ display:none; }
-
-.r-top{
-  display:flex; justify-content:space-between; align-items:flex-start;
-  padding-bottom: 1.1rem; margin-bottom: 1.1rem;
-  border-bottom: 1px solid var(--edge);
-}
-.r-id{ display:flex; gap:.9rem; align-items:center; }
-.r-icon{
-  width:46px; height:46px; border-radius: var(--r-sm);
-  background: rgba(255,255,255,.04); border:1px solid var(--edge);
-  display:flex; align-items:center; justify-content:center; font-size:1.4rem;
-}
-.r-name{ font-weight:800; font-size:1.15rem; font-family: var(--mono); }
-.r-sub{ font-size:.78rem; color: var(--ink-faint); }
-.badge-ok{
-  font-size:.75rem; font-weight:700; color: var(--green);
-  background: rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.35);
-  padding:.3rem .7rem; border-radius: 999px; white-space:nowrap;
-}
-
-.meta{
-  display:grid; grid-template-columns: 1fr 1fr; gap:.7rem;
-  margin-bottom: 1.25rem;
-}
-.meta div{
-  background: rgba(255,255,255,.03); border:1px solid var(--edge);
-  border-radius: var(--r-sm); padding:.7rem .9rem;
-}
-.meta span{ display:block; font-size:.72rem; color: var(--ink-faint); margin-bottom:.15rem; }
-.meta b{ font-size:.9rem; font-weight:600; }
-
-.notice{
-  display:flex; gap:.65rem; font-size:.82rem; color:#fde68a;
-  background: rgba(255,209,102,.08); border:1px solid rgba(255,209,102,.25);
-  padding: .75rem .9rem; border-radius: var(--r-sm);
-  margin-bottom: 1.25rem;
-}
-
-.dl{
-  display:flex; align-items:center; justify-content:center; gap:.6rem;
-  background: linear-gradient(120deg, var(--green), #0d9668);
-  color:#fff; text-decoration:none; font-weight:800;
-  padding: .95rem; border-radius: var(--r-md);
-  box-shadow: 0 10px 25px -8px rgba(34,197,94,.6);
-  transition: transform .15s;
-}
-.dl:hover{ transform: translateY(-2px); }
-
-/* ---------- capability strip ---------- */
-.strip{
-  margin-top: 3.5rem;
-  border-top: 1px solid var(--edge);
-  padding-top: 1.75rem;
-}
-.strip-row{
-  display:flex; align-items:flex-start; gap:1rem;
-  padding: 1rem 0;
-}
-.strip-row + .strip-row{ border-top: 1px solid var(--edge); }
-.strip-num{
-  font-family: var(--mono); color: var(--ink-faint); font-size:.85rem; padding-top:.15rem;
-}
-.strip-text h4{ font-size:.95rem; font-weight:700; margin-bottom:.2rem; }
-.strip-text p{ font-size:.85rem; color: var(--ink-soft); }
-
-/* ---------- footer ---------- */
-footer{
-  margin-top: 3rem;
-  display:flex; justify-content:space-between; align-items:center;
-  font-size:.8rem; color: var(--ink-faint);
-  flex-wrap:wrap; gap:.75rem;
-}
-footer a{ color: var(--ink-soft); text-decoration:none; }
-footer a:hover{ color:#fff; }
-
-@media (max-width:560px){
-  .field-row{ flex-direction:column; }
-  .meta{ grid-template-columns:1fr; }
-  .hero h1{ font-size:1.55rem; }
-}
-@media (prefers-reduced-motion: reduce){
-  .vault, .vault.locked{ animation:none !important; }
-  .result{ animation:none !important; }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>بوابة تحميل السكربتات | RAVX Security Systems</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Tajawal:wght@400;500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <!-- Ambient Cyber Lighting & Grids -->
+  <div class="cyber-glow sphere-primary"></div>
+  <div class="cyber-glow sphere-cyan"></div>
+  <div class="cyber-glow sphere-emerald"></div>
+  <div class="cyber-grid-overlay"></div>
+  <div class="cyber-scanline-ambient"></div>
 
-<div class="wrap">
-
-  <div class="top">
-    <div class="mark">
-      <div class="mark-glyph">VX</div>
-      <div>
-        <div class="mark-name">فولت</div>
-        <div class="mark-role">استرداد الموارد الرقمية</div>
-      </div>
-    </div>
-    <a class="link" href="#">تحتاج مساعدة؟</a>
-  </div>
-
-  <div class="hero">
-    <h1>أدخل الكود، وتُفتح الخزنة</h1>
-    <p>كل كود يُستخدم مرة واحدة ويؤدي إلى ملف أو رخصة محددة. لا تسجيل، لا انتظار — فقط تحقق فوري.</p>
-
-    <div class="vault locked" id="vault">
-      <div class="vault-inner">
-        <div class="vault-label">رمز الاسترداد</div>
-        <div class="field-row">
-          <div class="field">
-            <input id="codeInput" type="text" placeholder="XXXX-XXXX-XXXX" maxlength="14" autocomplete="off">
+  <!-- Main Container -->
+  <div class="site-container">
+    <!-- Navigation / Header -->
+    <header class="header">
+      <div class="brand-group">
+        <div class="brand-avatar-wrapper">
+          <div class="radar-circle"></div>
+          <img 
+            src="https://cdn.discordapp.com/attachments/1347530974971559996/1545517413678977034/RAVX_LOGO.png?ex=6a9c6ec1&is=6a9b1d41&hm=f4254219e932d39218cee412e64e1d0ae3eba0a9993d75024e7eae292972e9eb&" 
+            alt="RAVX Logo" 
+            class="brand-logo"
+            onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'44\' height=\'44\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%236366f1\' stroke-width=\'2\'><path d=\'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z\'/></svg>'"
+          >
+          <span class="avatar-status-dot"></span>
+        </div>
+        <div class="brand-text">
+          <div class="brand-title-row">
+            <h1 class="brand-title">RAVX STORY</h1>
+            <span class="version-tag font-mono">v7.4.2</span>
           </div>
-          <button class="go" id="goBtn">فتح</button>
-        </div>
-        <div class="hint">جرّب كود تجريبي: <code id="demoCode">DEMO-2026</code></div>
-        <div class="msg" id="msg"></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="result hidden" id="result">
-    <div class="r-top">
-      <div class="r-id">
-        <div class="r-icon">📦</div>
-        <div>
-          <div class="r-name">ASSET-PACK-07</div>
-          <div class="r-sub">حزمة موارد كاملة</div>
+          <p class="brand-subtitle">نظام تحميل الموارد والسكربتات المشفرة لسيرفرات FiveM</p>
         </div>
       </div>
-      <div class="badge-ok">تم التحقق</div>
-    </div>
 
-    <div class="meta">
-      <div><span>الحجم</span><b>412 ميجابايت</b></div>
-      <div><span>الصيغة</span><b>ZIP</b></div>
-      <div><span>الترخيص</span><b>استخدام شخصي</b></div>
-      <div><span>صلاحية الرابط</span><b>24 ساعة</b></div>
-    </div>
+      <!-- Live Server Telemetry Badges -->
+      <div class="header-badges">
+        <div class="telemetry-badge font-mono">
+          <span class="ping-dot"></span>
+          <span>خادم التحميل: متصل (18ms)</span>
+        </div>
+        <div class="security-level-badge font-mono">
+          <span class="shield-glyph">🛡️</span>
+          <span>AES-256 GCM</span>
+        </div>
+      </div>
+    </header>
 
-    <div class="notice">
-      <span>⚠️</span>
-      <span>هذا الرابط مخصص لهذا الكود فقط ولن يعمل بعد انتهاء صلاحيته. احتفظ بنسخة بعد التحميل.</span>
-    </div>
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Hero Section -->
+      <div class="hero-section">
+        <div class="hero-tagline-wrap">
+          <span class="cyber-badge font-mono">
+            <span class="badge-icon">⚡</span>
+            <span>RAVX SECURITY PROTOCOL V7 • SECURE GATEWAY</span>
+          </span>
+        </div>
+        <h2 class="hero-title">
+          أدخل كود التحميل واستلم <span class="highlight-text">سكريبتك المشفر</span>
+        </h2>
+        <p class="hero-desc">
+          إذا قمت بتشفير سكريبتك عبر بوت ديسكورد أو لوحة التحكم، أدخل كود الترخيص أدناه لبدء فحص التوقيع الرقمي وتحميل ملف الـ (.ZIP) مباشرة وبأقصى سرعة اتصال.
+        </p>
+      </div>
 
-    <a class="dl" href="#" download>
-      <span>⬇</span>
-      <span>تحميل الملف</span>
-    </a>
+      <!-- Code Input Box -->
+      <section class="cyber-card input-card">
+        <!-- Corner Tech Brackets -->
+        <span class="bracket top-right"></span>
+        <span class="bracket top-left"></span>
+        <span class="bracket bottom-right"></span>
+        <span class="bracket bottom-left"></span>
+        <div class="card-scanline"></div>
+
+        <form id="codeForm" onsubmit="event.preventDefault(); verifyCode();">
+          <div class="label-row">
+            <label for="codeInput" class="input-label">
+              <span class="label-icon">🔑</span>
+              <span>كود السكربت المرخص (License Code)</span>
+            </label>
+            <span class="input-hint font-mono">الصيغة: RAVX-XXXXX</span>
+          </div>
+
+          <div class="input-group-row">
+            <div class="input-container">
+              <div class="input-prefix-icon font-mono">[#]</div>
+              <input 
+                type="text" 
+                id="codeInput" 
+                placeholder="RAVX-DEMO1" 
+                maxlength="20" 
+                autocomplete="off" 
+                spellcheck="false"
+                required
+              >
+              <button type="button" class="btn-paste" id="pasteBtn" onclick="pasteFromClipboard()" title="لصق الكود من الحافظة">
+                <span class="paste-icon">📋</span>
+                <span>لصق</span>
+              </button>
+            </div>
+            
+            <button type="submit" class="btn-primary" id="submitBtn">
+              <span class="btn-text">فحص وترخيص الكود</span>
+              <span class="btn-icon">⚡</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Quick Demo Pills -->
+        <div class="quick-demo-wrapper">
+          <span class="demo-label">✨ أكواد تجريبية للفحص:</span>
+          <div class="demo-pills">
+            <button type="button" class="demo-pill font-mono" onclick="loadDemoCode('RAVX-DEMO1')">
+              RAVX-DEMO1 (Multicharacter)
+            </button>
+            <button type="button" class="demo-pill font-mono" onclick="loadDemoCode('RAVX-HUD02')">
+              RAVX-HUD02 (Cyber HUD)
+            </button>
+            <button type="button" class="demo-pill font-mono" onclick="loadDemoCode('RAVX-MDT99')">
+              RAVX-MDT99 (Police MDT)
+            </button>
+          </div>
+        </div>
+
+        <!-- Verification Progress / Terminal -->
+        <div id="scanningBox" class="scanning-box hidden">
+          <div class="scanning-header font-mono">
+            <span class="scanning-spinner"></span>
+            <span id="scanningText">جاري الاتصال بخوادم ترخيص RAVX...</span>
+          </div>
+          <div class="scanning-progress-bar">
+            <div id="scanningBarFill" class="progress-fill"></div>
+          </div>
+        </div>
+
+        <!-- Feedback / Status Message Box -->
+        <div id="statusMessage" class="status-box hidden"></div>
+      </section>
+
+      <!-- Script Result Card (Shown When Code is Valid) -->
+      <section id="scriptDetails" class="cyber-card result-card hidden">
+        <span class="bracket top-right"></span>
+        <span class="bracket top-left"></span>
+        <span class="bracket bottom-right"></span>
+        <span class="bracket bottom-left"></span>
+
+        <!-- Result Header -->
+        <div class="result-header">
+          <div class="resource-meta">
+            <div class="resource-icon-box">
+              <span class="res-icon">📦</span>
+              <span class="corner-glow"></span>
+            </div>
+            <div>
+              <div class="resource-top-tags">
+                <span class="tag-category" id="resCategory">FiveM Encrypted Resource</span>
+                <span class="tag-version font-mono" id="resVersion">v3.4.1</span>
+              </div>
+              <h3 id="resName" class="resource-title font-mono">ravx_multicharacter_v3</h3>
+            </div>
+          </div>
+
+          <div class="verified-badge-wrap">
+            <div class="verified-pill">
+              <span class="verified-pulse"></span>
+              <span class="verified-text">🛡️ رخصة مؤكدة ومحمية</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Technical Specs Bento Grid -->
+        <div class="details-bento-grid">
+          <div class="detail-cell">
+            <div class="detail-cell-icon">🌐</div>
+            <div class="detail-cell-content">
+              <span class="cell-label">الآي بي المرخّص (Server IP)</span>
+              <div class="cell-val-row">
+                <strong id="resIp" class="cell-value font-mono">185.220.101.44:30120</strong>
+                <button type="button" class="mini-copy-btn" onclick="copyText('resIp')" title="نسخ الآي بي">
+                  📋
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-cell">
+            <div class="detail-cell-icon">🔐</div>
+            <div class="detail-cell-content">
+              <span class="cell-label">نمط التشفير والحماية</span>
+              <strong id="resMode" class="cell-value">AES-256 + Lua Guard V7 (Hardware Lock)</strong>
+            </div>
+          </div>
+
+          <div class="detail-cell">
+            <div class="detail-cell-icon">📊</div>
+            <div class="detail-cell-content">
+              <span class="cell-label">حجم الملف المضغوط</span>
+              <div class="cell-val-row">
+                <strong id="resSize" class="cell-value font-mono">42.8 MB</strong>
+                <span class="compression-tag font-mono">ZIP (98% Comp)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-cell">
+            <div class="detail-cell-icon">📥</div>
+            <div class="detail-cell-content">
+              <span class="cell-label">إحصائيات التحميل</span>
+              <div class="cell-val-row">
+                <strong id="resDownloads" class="cell-value font-mono">1,428 مرة</strong>
+                <span class="status-live-tag">متاح للتحميل</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Checksum Hash Info -->
+        <div class="checksum-bar font-mono">
+          <span class="hash-label">SHA-256 HASH:</span>
+          <span id="resChecksum" class="hash-value">a8f9c1b4e2d7e801b9ca4e723dfbc90172e0a4f5</span>
+          <button type="button" class="mini-copy-btn" onclick="copyText('resChecksum')" title="نسخ الهاش">
+            📋
+          </button>
+        </div>
+
+        <!-- Security Warning Banner -->
+        <div class="security-banner">
+          <div class="sec-hazard-stripe"></div>
+          <div class="sec-content">
+            <span class="sec-icon">⚠️</span>
+            <p>
+              <strong>تنبيه الأمان والترخيص:</strong> هذا السكريبت مشفر ومقفل بحماية خادم FiveM ومربوط بالآي بي المذكور أعلاه، ولن يعمل إذا تم تغيير اسم المجلد، أو فك الحماية، أو تشغيله على آي بي أو منفذ مختلف.
+            </p>
+          </div>
+        </div>
+
+        <!-- Action Download Buttons -->
+        <div class="action-buttons-group">
+          <a id="downloadBtn" href="#" class="btn-download-glow" onclick="handleDownloadClick(event)">
+            <div class="btn-dl-icon-wrap">
+              <span class="dl-arrow">⬇️</span>
+            </div>
+            <div class="btn-dl-content">
+              <span class="dl-title">تحميل الملف المضغوط (.ZIP) الآن</span>
+              <span class="dl-subtitle font-mono" id="dlFileName">ravx_multicharacter_v3.zip</span>
+            </div>
+            <div class="btn-dl-speed-badge font-mono">
+              ⚡ Ultra Fast CDN
+            </div>
+          </a>
+
+          <button type="button" class="btn-share-link" onclick="copyDirectLink()">
+            <span class="share-icon">🔗</span>
+            <span>نسخ رابط التحميل والترخيص المباشر</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- High-Tech Features Section -->
+      <section class="features-container">
+        <div class="feature-card">
+          <span class="feature-tech-corner">01</span>
+          <div class="feature-icon-wrapper cyan">⚡</div>
+          <h4 class="feature-title">تحميل فوري عبر شبكة CDN فائقة</h4>
+          <p class="feature-text">
+            سيرفرات اتصال سريعة توفر روابط تحميل مباشرة فائقة السرعة بدون أي تأخير، إعلانات مزعجة، أو كابتشا معقدة.
+          </p>
+          <div class="feature-metric font-mono">1.2 Gbps Throughput</div>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-tech-corner">02</span>
+          <div class="feature-icon-wrapper purple">📁</div>
+          <h4 class="feature-title">تجاوز قيود ديسكورد (Discord Limit)</h4>
+          <p class="feature-text">
+            لا داعي للقلق بشأن حد الـ 24MB؛ البوابة تدعم ملفات المابات والسيارات والباكجات الضخمة حتى حجم 2GB بسهولة.
+          </p>
+          <div class="feature-metric font-mono">Up to 2GB Storage</div>
+        </div>
+
+        <div class="feature-card">
+          <span class="feature-tech-corner">03</span>
+          <div class="feature-icon-wrapper emerald">🛡️</div>
+          <h4 class="feature-title">حماية وترخيص FiveM FX-Server</h4>
+          <p class="feature-text">
+            أعلى مستويات الحماية ضد التسريب والسرقة مع فحص تلقائي للآي بي ومطابقة سلامة الأكواد من الأبواب الخلفية.
+          </p>
+          <div class="feature-metric font-mono">AES-256 + Lua Guard</div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-brand-meta">
+          <span class="footer-brand-title font-mono">RAVX-TEAM SECURITY PROTOCOL</span>
+          <p>نظام تشفير وحماية سكربتات FiveM &copy; 2026 — جميع الحقوق محفوظة لـ RAVX.</p>
+        </div>
+
+        <div class="footer-links-group">
+          <a href="https://discord.com/channels/1411298467061698623/1509399450504794285" target="_blank" rel="noopener" class="footer-link-btn">
+            <span class="f-link-icon">⭐</span>
+            <span>الدعم الفني في ديسكورد</span>
+          </a>
+          <span class="footer-divider">•</span>
+          <a href="https://discord.com/channels/1411298467061698623/1545526903052435476" target="_blank" rel="noopener" class="footer-link-btn">
+            <span class="f-link-icon">💎</span>
+            <span>أسعار وباقات التشفير</span>
+          </a>
+        </div>
+      </div>
+    </footer>
   </div>
 
-  <div class="strip">
-    <div class="strip-row">
-      <div class="strip-num">01</div>
-      <div class="strip-text">
-        <h4>تحقق فوري</h4>
-        <p>الكود يُفحص لحظياً مقابل قاعدة البيانات، دون أي وسيط.</p>
-      </div>
-    </div>
-    <div class="strip-row">
-      <div class="strip-num">02</div>
-      <div class="strip-text">
-        <h4>رابط آمن مؤقت</h4>
-        <p>كل رابط تحميل يُنشأ خصيصاً لجلستك وينتهي تلقائياً.</p>
-      </div>
-    </div>
-    <div class="strip-row">
-      <div class="strip-num">03</div>
-      <div class="strip-text">
-        <h4>سجل الاستخدام</h4>
-        <p>يمكنك مراجعة كل عملية استرداد سابقة من نفس الكود.</p>
-      </div>
-    </div>
+  <!-- Cyber Toast Notification -->
+  <div id="cyberToast" class="cyber-toast hidden">
+    <span class="toast-icon">✨</span>
+    <span id="toastMessage" class="toast-text">تمت العملية بنجاح!</span>
   </div>
 
-  <footer>
-    <span>© 2026 فولت</span>
-    <div>
-      <a href="#">الشروط</a> · <a href="#">الخصوصية</a>
-    </div>
-  </footer>
+  <script>
+    // Database of demo scripts
+    const SCRIPT_DATABASE = {
+      'RAVX-DEMO1': {
+        name: 'ravx_multicharacter_v3',
+        category: 'FiveM Core Resource',
+        version: 'v3.4.1 [Stable]',
+        ip: '185.220.101.44:30120',
+        mode: 'AES-256 + Lua Guard V7 (Hardware Lock)',
+        size: '42.8 MB',
+        fileName: 'ravx_multicharacter_v3.zip',
+        downloads: '1,428 مرة',
+        checksum: 'a8f9c1b4e2d7e801b9ca4e723dfbc90172e0a4f5'
+      },
+      'RAVX-HUD02': {
+        name: 'ravx_cyber_hud_ultra',
+        category: 'UI & Interface Framework',
+        version: 'v2.1.0',
+        ip: '194.147.122.88:30120',
+        mode: 'Lua Bytecode Encryptor + IP Whitelist',
+        size: '18.4 MB',
+        fileName: 'ravx_cyber_hud_ultra.zip',
+        downloads: '890 مرة',
+        checksum: 'c4e2a8719b0d3f2810a9c8b74e612f0a1c2e9b81'
+      },
+      'RAVX-MDT99': {
+        name: 'ravx_police_mdt_cad',
+        category: 'Police & CAD Emergency',
+        version: 'v4.0.2',
+        ip: '51.89.14.210:30120',
+        mode: 'Triple DES + Token Auth Key',
+        size: '64.2 MB',
+        fileName: 'ravx_police_mdt_cad.zip',
+        downloads: '620 مرة',
+        checksum: 'f1e09c8d7b6a5f4e3d2c1b0a987654321fedcba0'
+      }
+    };
 
-</div>
+    let activeScript = null;
 
-<script>
-const vault = document.getElementById('vault');
-const input = document.getElementById('codeInput');
-const goBtn = document.getElementById('goBtn');
-const msg = document.getElementById('msg');
-const result = document.getElementById('result');
-const demoPill = document.getElementById('demoCode');
-
-demoPill.addEventListener('click', () => {
-  input.value = 'DEMO-2026';
-  input.focus();
-});
-
-function tryUnlock(){
-  const code = input.value.trim().toUpperCase();
-  if(!code){
-    msg.textContent = 'أدخل كوداً أولاً';
-    msg.className = 'msg err';
-    return;
-  }
-  msg.textContent = 'جارٍ التحقق...';
-  msg.className = 'msg wait';
-  vault.classList.remove('ok','bad');
-
-  setTimeout(() => {
-    if(code === 'DEMO-2026'){
-      vault.classList.remove('locked');
-      vault.classList.add('ok');
-      msg.textContent = 'تم التحقق بنجاح';
-      msg.className = 'msg';
-      result.classList.remove('hidden');
-      result.scrollIntoView({behavior:'smooth', block:'center'});
-    } else {
-      vault.classList.add('bad');
-      msg.textContent = 'الكود غير صحيح أو منتهي الصلاحية';
-      msg.className = 'msg err';
-      result.classList.add('hidden');
-      setTimeout(() => vault.classList.remove('bad'), 500);
+    // Load Demo Code into Input
+    function loadDemoCode(code) {
+      const input = document.getElementById('codeInput');
+      input.value = code;
+      showToast('تم وضع الكود التجريبي: ' + code);
+      verifyCode();
     }
-  }, 700);
-}
 
-goBtn.addEventListener('click', tryUnlock);
-input.addEventListener('keydown', e => { if(e.key === 'Enter') tryUnlock(); });
-</script>
+    // Paste from Clipboard
+    async function pasteFromClipboard() {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          document.getElementById('codeInput').value = text.trim();
+          showToast('تم لصق الكود من الحافظة!');
+        }
+      } catch (err) {
+        showToast('يرجى السماح بالوصول للحافظة أو لصق الكود يدوياً');
+      }
+    }
 
+    // Verify Code Function with Cyber Scanning Animation
+    function verifyCode() {
+      const input = document.getElementById('codeInput');
+      const code = input.value.trim().toUpperCase();
+      const statusBox = document.getElementById('statusMessage');
+      const scanningBox = document.getElementById('scanningBox');
+      const scanningText = document.getElementById('scanningText');
+      const scanningFill = document.getElementById('scanningBarFill');
+      const resultCard = document.getElementById('scriptDetails');
+
+      if (!code) {
+        showStatus('error', '⚠️ يرجى إدخال كود السكربت أولاً.');
+        return;
+      }
+
+      // Hide previous results & status
+      statusBox.classList.add('hidden');
+      resultCard.classList.add('hidden');
+      scanningBox.classList.remove('hidden');
+      scanningFill.style.width = '0%';
+      scanningText.textContent = 'جاري الاتصال بخوادم ترخيص RAVX...';
+
+      // Simulate Scanning Progress
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 25;
+        scanningFill.style.width = progress + '%';
+
+        if (progress === 50) {
+          scanningText.textContent = 'جاري فحص التوقيع الرقمي ومطابقة الـ IP...';
+        } else if (progress === 75) {
+          scanningText.textContent = 'تم تأكيد الرخصة! جاري إنشاء رابط التحميل...';
+        } else if (progress >= 100) {
+          clearInterval(interval);
+          scanningBox.classList.add('hidden');
+          processResult(code);
+        }
+      }, 150);
+    }
+
+    function processResult(code) {
+      const resultCard = document.getElementById('scriptDetails');
+      
+      let data = SCRIPT_DATABASE[code];
+
+      // If user enters custom code, create dynamic valid script
+      if (!data && (code.startsWith('RAVX-') || code.length >= 6)) {
+        const cleanName = code.replace(/[^A-Z0-9]/g, '').toLowerCase();
+        data = {
+          name: 'ravx_' + cleanName + '_res',
+          category: 'FiveM Encrypted Resource',
+          version: 'v1.0.0 [Production]',
+          ip: '144.76.' + Math.floor(Math.random() * 150 + 10) + '.' + Math.floor(Math.random() * 150 + 10) + ':30120',
+          mode: 'RAVX Shield V7 (FiveM Native Binding)',
+          size: (Math.random() * 35 + 12).toFixed(1) + ' MB',
+          fileName: 'ravx_' + cleanName + '.zip',
+          downloads: Math.floor(Math.random() * 600 + 40) + ' مرة',
+          checksum: (cleanName.padEnd(12, '0') + '4e801b9ca4e723dfbc90172e0a4f5').slice(0, 40)
+        };
+      }
+
+      if (data) {
+        activeScript = data;
+        document.getElementById('resName').textContent = data.name;
+        document.getElementById('resCategory').textContent = data.category;
+        document.getElementById('resVersion').textContent = data.version;
+        document.getElementById('resIp').textContent = data.ip;
+        document.getElementById('resMode').textContent = data.mode;
+        document.getElementById('resSize').textContent = data.size;
+        document.getElementById('resDownloads').textContent = data.downloads;
+        document.getElementById('resChecksum').textContent = data.checksum;
+        document.getElementById('dlFileName').textContent = data.fileName;
+
+        resultCard.classList.remove('hidden');
+        resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        showToast('✅ تم تأكيد الترخيص بنجاح! الملف جاهز للتحميل.');
+      } else {
+        showStatus('error', '❌ كود السكربت غير صالح أو منتهي الصلاحية. تأكد من إدخال الكود المكون من 9 خانات بشكل صحيح.');
+      }
+    }
+
+    function showStatus(type, msg) {
+      const statusBox = document.getElementById('statusMessage');
+      statusBox.className = 'status-box ' + type;
+      statusBox.innerHTML = msg;
+      statusBox.classList.remove('hidden');
+    }
+
+    // Handle Download Click
+    function handleDownloadClick(e) {
+      e.preventDefault();
+      if (!activeScript) return;
+
+      showToast('🚀 جاري بدء تحميل: ' + activeScript.fileName);
+
+      // Create dummy file download simulation
+      const dummyContent = 'RAVX Security Protocol v7.4.2\nResource: ' + activeScript.name + '\nLicensed IP: ' + activeScript.ip + '\nChecksum: ' + activeScript.checksum;
+      const blob = new Blob([dummyContent], { type: 'application/zip' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = activeScript.fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Copy Text to Clipboard
+    function copyText(elementId) {
+      const el = document.getElementById(elementId);
+      if (el) {
+        navigator.clipboard.writeText(el.textContent.trim());
+        showToast('تم نسخ: ' + el.textContent.trim());
+      }
+    }
+
+    // Copy Direct Share Link
+    function copyDirectLink() {
+      const code = document.getElementById('codeInput').value.trim() || 'RAVX-DEMO1';
+      const shareUrl = window.location.origin + window.location.pathname + '?code=' + encodeURIComponent(code);
+      navigator.clipboard.writeText(shareUrl);
+      showToast('🔗 تم نسخ رابط التحميل المباشر للحافظة!');
+    }
+
+    // Cyber Toast Function
+    function showToast(msg) {
+      const toast = document.getElementById('cyberToast');
+      const toastMsg = document.getElementById('toastMessage');
+      toastMsg.textContent = msg;
+      toast.classList.remove('hidden');
+      toast.classList.add('show');
+
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.classList.add('hidden'), 300);
+      }, 3200);
+    }
+
+    // Auto-check URL parameters if ?code= is passed
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const codeParam = params.get('code');
+      if (codeParam) {
+        document.getElementById('codeInput').value = codeParam;
+        verifyCode();
+      }
+    });
+  </script>
 </body>
 </html>
