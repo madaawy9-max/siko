@@ -648,3 +648,136 @@ body {
     text-align: center;
   }
 }
+
+
+/* ===============================
+   ZP PREMIUM REDESIGN MOTION PACK
+   Modern Neon Glass UI Upgrade
+================================ */
+
+:root {
+  --zp-neon: #00f0ff;
+  --zp-purple: #8b5cf6;
+  --zp-pink: #ec4899;
+}
+
+/* Animated background */
+body::before {
+  content:"";
+  position:fixed;
+  inset:-50%;
+  background:
+    radial-gradient(circle, rgba(0,240,255,.12), transparent 30%),
+    radial-gradient(circle, rgba(139,92,246,.12), transparent 35%);
+  animation: zpRotate 18s linear infinite;
+  z-index:-1;
+}
+
+@keyframes zpRotate {
+  from {transform:rotate(0deg) scale(1);}
+  to {transform:rotate(360deg) scale(1.2);}
+}
+
+/* Smooth entrance */
+.container > * {
+  animation: zpEnter .9s cubic-bezier(.16,1,.3,1) both;
+}
+
+@keyframes zpEnter {
+  from {
+    opacity:0;
+    transform:translateY(35px);
+    filter:blur(12px);
+  }
+  to {
+    opacity:1;
+    transform:none;
+    filter:blur(0);
+  }
+}
+
+/* Premium cards */
+.card,
+.feature-box {
+  position:relative;
+  overflow:hidden;
+  backdrop-filter:blur(22px);
+  transition:.35s ease;
+}
+
+.card::after,
+.feature-box::after {
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(
+    120deg,
+    transparent,
+    rgba(255,255,255,.12),
+    transparent
+  );
+  transform:translateX(-120%);
+  transition:.7s;
+}
+
+.card:hover::after,
+.feature-box:hover::after {
+  transform:translateX(120%);
+}
+
+.card:hover,
+.feature-box:hover {
+  transform:translateY(-10px) scale(1.02);
+  box-shadow:
+   0 25px 80px rgba(0,240,255,.18);
+}
+
+/* Neon buttons */
+.btn-primary,
+.btn-download {
+  border-radius:16px;
+  animation:zpPulse 3s infinite;
+}
+
+.btn-primary:hover,
+.btn-download:hover {
+  transform:translateY(-5px) scale(1.03);
+}
+
+@keyframes zpPulse {
+  0%,100% {box-shadow:0 0 15px transparent;}
+  50% {box-shadow:0 0 35px rgba(0,240,255,.45);}
+}
+
+/* Title upgrade */
+.hero-title {
+  background:linear-gradient(90deg,#fff,var(--zp-neon),var(--zp-purple));
+  -webkit-background-clip:text;
+  color:transparent;
+  background-size:200%;
+  animation:zpGradient 5s infinite;
+}
+
+@keyframes zpGradient {
+  50% {background-position:100%;}
+}
+
+/* Floating elements */
+.brand-logo,
+.resource-icon {
+ animation:zpFloat 4s ease-in-out infinite;
+}
+
+@keyframes zpFloat {
+  50% {transform:translateY(-8px);}
+}
+
+/* Better mobile */
+@media(max-width:768px){
+ .card{
+   padding:1.2rem;
+ }
+ .hero-title{
+   font-size:1.8rem;
+ }
+}
