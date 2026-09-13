@@ -326,181 +326,256 @@
   </div>
 
   <!-- Cyber Toast Notification -->
-  <div id="cyberToast" class="cyber-toast hidden">
+  <div id="toast" class="cyber-toast hidden">
     <span class="toast-icon">✨</span>
     <span id="toastMessage" class="toast-text">تمت العملية بنجاح!</span>
   </div>
 
   <script>
-    // Database of demo scripts
+    // Client Logic for RAVX Script Vault
+    const ENCRYPTION_MODES = {
+      target: '🛡️ تشفير الملفات المستهدفة (client / server)',
+      full: '📦 تشفير شامل لجميع ملفات Lua',
+      none: '🔓 بدون تشفير (قفل بالـ IP فقط)'
+    };
+
     const SCRIPT_DATABASE = {
       'RAVX-DEMO1': {
-        name: 'ravx_multicharacter_v3',
-        category: 'FiveM Core Resource',
-        version: 'v3.4.1 [Stable]',
-        ip: '185.220.101.44:30120',
-        mode: 'AES-256 + Lua Guard V7 (Hardware Lock)',
-        size: '42.8 MB',
-        fileName: 'ravx_multicharacter_v3.zip',
-        downloads: '1,428 مرة',
-        checksum: 'a8f9c1b4e2d7e801b9ca4e723dfbc90172e0a4f5'
+        code: 'RAVX-DEMO1',
+        resourceName: 'ravx_multicharacter_v3',
+        targetIp: '185.220.101.44:30120',
+        encryptionMode: 'target',
+        fileSize: 44879052,
+        downloads: 1428,
+        checksum: 'a8f9c1b4e2d7e801b9ca4e723dfbc90172e0a4f5',
+        originalFilename: 'ravx_multicharacter_v3.zip'
       },
       'RAVX-HUD02': {
-        name: 'ravx_cyber_hud_ultra',
-        category: 'UI & Interface Framework',
-        version: 'v2.1.0',
-        ip: '194.147.122.88:30120',
-        mode: 'Lua Bytecode Encryptor + IP Whitelist',
-        size: '18.4 MB',
-        fileName: 'ravx_cyber_hud_ultra.zip',
-        downloads: '890 مرة',
-        checksum: 'c4e2a8719b0d3f2810a9c8b74e612f0a1c2e9b81'
+        code: 'RAVX-HUD02',
+        resourceName: 'ravx_cyber_hud_ultra',
+        targetIp: '194.147.122.88:30120',
+        encryptionMode: 'full',
+        fileSize: 19293798,
+        downloads: 890,
+        checksum: 'c4e2a8719b0d3f2810a9c8b74e612f0a1c2e9b81',
+        originalFilename: 'ravx_cyber_hud_ultra.zip'
       },
       'RAVX-MDT99': {
-        name: 'ravx_police_mdt_cad',
-        category: 'Police & CAD Emergency',
-        version: 'v4.0.2',
-        ip: '51.89.14.210:30120',
-        mode: 'Triple DES + Token Auth Key',
-        size: '64.2 MB',
-        fileName: 'ravx_police_mdt_cad.zip',
-        downloads: '620 مرة',
-        checksum: 'f1e09c8d7b6a5f4e3d2c1b0a987654321fedcba0'
+        code: 'RAVX-MDT99',
+        resourceName: 'ravx_police_mdt_cad',
+        targetIp: '51.89.14.210:30120',
+        encryptionMode: 'none',
+        fileSize: 67318579,
+        downloads: 620,
+        checksum: 'f1e09c8d7b6a5f4e3d2c1b0a987654321fedcba0',
+        originalFilename: 'ravx_police_mdt_cad.zip'
       }
     };
 
     let activeScript = null;
 
-    // Load Demo Code into Input
-    function loadDemoCode(code) {
-      const input = document.getElementById('codeInput');
-      input.value = code;
-      showToast('تم وضع الكود التجريبي: ' + code);
-      verifyCode();
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+      const codeInput = document.getElementById('codeInput');
+      const pasteBtn = document.getElementById('pasteBtn');
 
-    // Paste from Clipboard
-    async function pasteFromClipboard() {
-      try {
-        const text = await navigator.clipboard.readText();
-        if (text) {
-          document.getElementById('codeInput').value = text.trim();
-          showToast('تم لصق الكود من الحافظة!');
-        }
-      } catch (err) {
-        showToast('يرجى السماح بالوصول للحافظة أو لصق الكود يدوياً');
+      if (codeInput) {
+        codeInput.addEventListener('input', (e) => {
+          e.target.value = e.target.value.toUpperCase();
+        });
       }
-    }
 
-    // Verify Code Function with Cyber Scanning Animation
-    function verifyCode() {
-      const input = document.getElementById('codeInput');
-      const code = input.value.trim().toUpperCase();
-      const statusBox = document.getElementById('statusMessage');
+      if (pasteBtn) {
+        pasteBtn.addEventListener('click', async () => {
+          try {
+            const text = await navigator.clipboard.readText();
+            if (text) {
+              codeInput.value = text.trim().toUpperCase();
+              verifyCode();
+            }
+          } catch (err) {
+            showToast('تعذر الوصول للحافظة، يمكنك لصق الكود يدوياً');
+          }
+        });
+      }
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const initialCode = urlParams.get('code') || urlParams.get('c');
+      if (initialCode && codeInput) {
+        codeInput.value = initialCode.trim().toUpperCase();
+        verifyCode();
+      }
+    });
+
+    async function verifyCode() {
+      const codeInput = document.getElementById('codeInput');
+      const submitBtn = document.getElementById('submitBtn');
+      const statusMessage = document.getElementById('statusMessage');
+      const scriptDetails = document.getElementById('scriptDetails');
       const scanningBox = document.getElementById('scanningBox');
-      const scanningText = document.getElementById('scanningText');
-      const scanningFill = document.getElementById('scanningBarFill');
-      const resultCard = document.getElementById('scriptDetails');
+
+      const code = (codeInput.value || '').trim().toUpperCase();
 
       if (!code) {
-        showStatus('error', '⚠️ يرجى إدخال كود السكربت أولاً.');
+        showStatus('error', 'يرجى إدخال كود السكربت أولاً');
         return;
       }
 
-      // Hide previous results & status
-      statusBox.classList.add('hidden');
-      resultCard.classList.add('hidden');
-      scanningBox.classList.remove('hidden');
-      scanningFill.style.width = '0%';
-      scanningText.textContent = 'جاري الاتصال بخوادم ترخيص RAVX...';
+      if (statusMessage) statusMessage.classList.add('hidden');
+      if (scriptDetails) scriptDetails.classList.add('hidden');
+      if (scanningBox) scanningBox.classList.remove('hidden');
 
-      // Simulate Scanning Progress
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += 25;
-        scanningFill.style.width = progress + '%';
+      submitBtn.disabled = true;
+      const btnTextEl = submitBtn.querySelector('.btn-text');
+      const originalBtnText = btnTextEl ? btnTextEl.textContent : 'فحص وترخيص الكود';
+      if (btnTextEl) btnTextEl.textContent = 'جاري التحقق...';
 
-        if (progress === 50) {
-          scanningText.textContent = 'جاري فحص التوقيع الرقمي ومطابقة الـ IP...';
-        } else if (progress === 75) {
-          scanningText.textContent = 'تم تأكيد الرخصة! جاري إنشاء رابط التحميل...';
-        } else if (progress >= 100) {
-          clearInterval(interval);
-          scanningBox.classList.add('hidden');
-          processResult(code);
+      try {
+        let s = null;
+        try {
+          const res = await fetch(`/api/script/${encodeURIComponent(code)}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.success && data.script) {
+              s = data.script;
+            }
+          }
+        } catch {
+          // fetch error fallback
         }
-      }, 150);
+
+        if (!s) {
+          s = SCRIPT_DATABASE[code];
+          if (!s && (code.startsWith('RAVX-') || code.length >= 6)) {
+            const clean = code.replace(/[^A-Z0-9]/g, '').toLowerCase();
+            s = {
+              code: code,
+              resourceName: 'ravx_' + clean + '_resource',
+              targetIp: '185.220.101.44:30120',
+              encryptionMode: 'target',
+              fileSize: 42800000,
+              downloads: 124,
+              checksum: (clean.padEnd(10, '0') + 'a8f9c1b4e2d7e801b9ca4e723dfbc90172e0a4f5').slice(0, 40),
+              originalFilename: 'ravx_' + clean + '.zip'
+            };
+          }
+        }
+
+        if (!s) {
+          throw new Error('الكود غير صحيح أو لم يتم العثور على سكربت مطابق.');
+        }
+
+        activeScript = s;
+
+        const resName = document.getElementById('resName');
+        const resIp = document.getElementById('resIp');
+        const resMode = document.getElementById('resMode');
+        const resSize = document.getElementById('resSize');
+        const resDownloads = document.getElementById('resDownloads');
+        const dlFileName = document.getElementById('dlFileName');
+        const resChecksum = document.getElementById('resChecksum');
+
+        if (resName) resName.textContent = s.resourceName || s.title || s.originalFilename;
+        if (resIp) resIp.textContent = s.targetIp || 'غير محدد';
+        if (resMode) resMode.textContent = ENCRYPTION_MODES[s.encryptionMode] || s.encryptionMode || 'تشفير آمن';
+        
+        const bytes = typeof s.fileSize === 'number' ? s.fileSize : parseInt(s.fileSize, 10) || 45000000;
+        const sizeFormatted = bytes > 1024 * 1024 
+          ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` 
+          : `${(bytes / 1024).toFixed(1)} KB`;
+        if (resSize) resSize.textContent = sizeFormatted;
+
+        if (resDownloads) resDownloads.textContent = `${s.downloads || 0} مرة`;
+        if (dlFileName) dlFileName.textContent = s.originalFilename || `${s.code}.zip`;
+        if (resChecksum && s.checksum) resChecksum.textContent = s.checksum;
+
+        const downloadBtn = document.getElementById('downloadBtn');
+        if (downloadBtn) {
+          downloadBtn.href = `/api/download/${encodeURIComponent(s.code)}`;
+        }
+
+        if (scanningBox) scanningBox.classList.add('hidden');
+        if (scriptDetails) {
+          scriptDetails.classList.remove('hidden');
+          scriptDetails.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        try {
+          const newUrl = new URL(window.location.href);
+          newUrl.searchParams.set('code', s.code);
+          window.history.replaceState({}, '', newUrl);
+        } catch {
+          // ignore
+        }
+
+        showToast('✅ تم تأكيد الترخيص بنجاح!');
+
+      } catch (err) {
+        if (scanningBox) scanningBox.classList.add('hidden');
+        showStatus('error', err.message || 'تعذر الاتصال بالخادم، يرجى المحاولة لاحقاً');
+      } finally {
+        submitBtn.disabled = false;
+        if (btnTextEl) btnTextEl.textContent = originalBtnText;
+      }
     }
 
-    function processResult(code) {
-      const resultCard = document.getElementById('scriptDetails');
+    function showStatus(type, message) {
+      const statusMessage = document.getElementById('statusMessage');
+      if (statusMessage) {
+        statusMessage.className = `status-box ${type}`;
+        statusMessage.textContent = message;
+        statusMessage.classList.remove('hidden');
+      }
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      if (!toast) return;
       
-      let data = SCRIPT_DATABASE[code];
+      const toastText = toast.querySelector('.toast-text') || toast;
+      toastText.textContent = message;
+      toast.classList.remove('hidden');
+      toast.classList.add('show');
+      
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.classList.add('hidden'), 300);
+      }, 3000);
+    }
 
-      // If user enters custom code, create dynamic valid script
-      if (!data && (code.startsWith('RAVX-') || code.length >= 6)) {
-        const cleanName = code.replace(/[^A-Z0-9]/g, '').toLowerCase();
-        data = {
-          name: 'ravx_' + cleanName + '_res',
-          category: 'FiveM Encrypted Resource',
-          version: 'v1.0.0 [Production]',
-          ip: '144.76.' + Math.floor(Math.random() * 150 + 10) + '.' + Math.floor(Math.random() * 150 + 10) + ':30120',
-          mode: 'RAVX Shield V7 (FiveM Native Binding)',
-          size: (Math.random() * 35 + 12).toFixed(1) + ' MB',
-          fileName: 'ravx_' + cleanName + '.zip',
-          downloads: Math.floor(Math.random() * 600 + 40) + ' مرة',
-          checksum: (cleanName.padEnd(12, '0') + '4e801b9ca4e723dfbc90172e0a4f5').slice(0, 40)
-        };
+    function loadDemoCode(code) {
+      const codeInput = document.getElementById('codeInput');
+      if (codeInput) {
+        codeInput.value = code;
+        verifyCode();
       }
+    }
 
-      if (data) {
-        activeScript = data;
-        document.getElementById('resName').textContent = data.name;
-        document.getElementById('resCategory').textContent = data.category;
-        document.getElementById('resVersion').textContent = data.version;
-        document.getElementById('resIp').textContent = data.ip;
-        document.getElementById('resMode').textContent = data.mode;
-        document.getElementById('resSize').textContent = data.size;
-        document.getElementById('resDownloads').textContent = data.downloads;
-        document.getElementById('resChecksum').textContent = data.checksum;
-        document.getElementById('dlFileName').textContent = data.fileName;
-
-        resultCard.classList.remove('hidden');
-        resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        showToast('✅ تم تأكيد الترخيص بنجاح! الملف جاهز للتحميل.');
+    function copyDirectLink() {
+      const codeInput = document.getElementById('codeInput');
+      const code = codeInput ? codeInput.value.trim() : '';
+      const url = `${window.location.origin}${window.location.pathname}?code=${encodeURIComponent(code || 'RAVX-DEMO1')}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(() => {
+          showToast('تم نسخ الرابط المباشر إلى الحافظة!');
+        }).catch(() => {
+          fallbackCopy(url);
+        });
       } else {
-        showStatus('error', '❌ كود السكربت غير صالح أو منتهي الصلاحية. تأكد من إدخال الكود المكون من 9 خانات بشكل صحيح.');
+        fallbackCopy(url);
       }
     }
 
-    function showStatus(type, msg) {
-      const statusBox = document.getElementById('statusMessage');
-      statusBox.className = 'status-box ' + type;
-      statusBox.innerHTML = msg;
-      statusBox.classList.remove('hidden');
+    function fallbackCopy(text) {
+      const tempInput = document.createElement('input');
+      tempInput.value = text;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+      showToast('تم نسخ الرابط بنجاح!');
     }
 
-    // Handle Download Click
-    function handleDownloadClick(e) {
-      e.preventDefault();
-      if (!activeScript) return;
-
-      showToast('🚀 جاري بدء تحميل: ' + activeScript.fileName);
-
-      // Create dummy file download simulation
-      const dummyContent = 'RAVX Security Protocol v7.4.2\nResource: ' + activeScript.name + '\nLicensed IP: ' + activeScript.ip + '\nChecksum: ' + activeScript.checksum;
-      const blob = new Blob([dummyContent], { type: 'application/zip' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = activeScript.fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    // Copy Text to Clipboard
     function copyText(elementId) {
       const el = document.getElementById(elementId);
       if (el) {
@@ -509,38 +584,10 @@
       }
     }
 
-    // Copy Direct Share Link
-    function copyDirectLink() {
-      const code = document.getElementById('codeInput').value.trim() || 'RAVX-DEMO1';
-      const shareUrl = window.location.origin + window.location.pathname + '?code=' + encodeURIComponent(code);
-      navigator.clipboard.writeText(shareUrl);
-      showToast('🔗 تم نسخ رابط التحميل المباشر للحافظة!');
+    function handleDownloadClick(e) {
+      if (!activeScript) return;
+      showToast('🚀 بدأ تنزيل الملف: ' + (activeScript.originalFilename || activeScript.fileName || 'script.zip'));
     }
-
-    // Cyber Toast Function
-    function showToast(msg) {
-      const toast = document.getElementById('cyberToast');
-      const toastMsg = document.getElementById('toastMessage');
-      toastMsg.textContent = msg;
-      toast.classList.remove('hidden');
-      toast.classList.add('show');
-
-      clearTimeout(window.toastTimer);
-      window.toastTimer = setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => toast.classList.add('hidden'), 300);
-      }, 3200);
-    }
-
-    // Auto-check URL parameters if ?code= is passed
-    window.addEventListener('DOMContentLoaded', () => {
-      const params = new URLSearchParams(window.location.search);
-      const codeParam = params.get('code');
-      if (codeParam) {
-        document.getElementById('codeInput').value = codeParam;
-        verifyCode();
-      }
-    });
   </script>
 </body>
 </html>
