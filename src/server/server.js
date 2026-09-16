@@ -1,176 +1,109 @@
-
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
-
 const db = require('../database/db');
 
-const PUBLIC_DIR = path.join(__dirname, '../../public');
-const UPLOAD_DIR = path.join(__dirname, '../../storage/uploads');
-
-if (!fs.existsSync(UPLOAD_DIR)) {
-    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-}
-
-const MAX_UPLOAD_SIZE = 2 * 1024 * 1024 * 1024;
-
+const PUBLIC_DIR = path.resolve(__dirname, '../../public');
+const MAX_CODE_LENGTH = 80;
 const MIME_TYPES = {
-    '.html':'text/html; charset=utf-8',
-    '.css':'text/css; charset=utf-8',
-    '.js':'application/javascript; charset=utf-8',
-    '.json':'application/json; charset=utf-8',
-    '.png':'image/png',
-    '.jpg':'image/jpeg',
-    '.jpeg':'image/jpeg',
-    '.svg':'image/svg+xml',
-    '.zip':'application/zip',
-    '.lua':'text/plain; charset=utf-8'
+  '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif',
+  '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.txt': 'text/plain; charset=utf-8',
+  '.lua': 'text/plain; charset=utf-8', '.zip': 'application/zip'
 };
 
-function sendJson(res, code, data){
-    res.writeHead(code,{
-        'Content-Type':'application/json; charset=utf-8',
-        'Access-Control-Allow-Origin':'*',
-        'Access-Control-Allow-Methods':'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers':'Content-Type'
-    });
-    res.end(JSON.stringify(data));
+function sendJson(res, status, data) {
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+  });
+  res.end(JSON.stringify(data));
 }
 
-function saveUpload(req,res){
-    let size = 0;
-    const filename = `upload_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.zip`;
-    const filePath = path.join(UPLOAD_DIR, filename);
-    const stream = fs.createWriteStream(filePath);
-
-    req.on('data', chunk=>{
-        size += chunk.length;
-
-        if(size > MAX_UPLOAD_SIZE){
-            req.destroy();
-            stream.destroy();
-            if(fs.existsSync(filePath)) fs.unlinkSync(filePath);
-            sendJson(res,413,{success:false,message:'حجم الملف أكبر من 2GB'});
-            return;
-        }
-
-        stream.write(chunk);
-    });
-
-    req.on('end',()=>{
-        stream.end();
-
-        const item = db.saveScript({
-            title: filename,
-            originalFilename: filename,
-            savedFilename: filename,
-            fileSize: size,
-            uploadType:'full',
-            encryptionMode:'full',
-            uploaderName:'Website Upload'
-        });
-
-        sendJson(res,200,{
-            success:true,
-            code:item.code,
-            filename,
-            size,
-            download:`/api/download/${item.code}`
-        });
-    });
+function safeCode(value) {
+  const code = String(value || '').trim();
+  return code && code.length <= MAX_CODE_LENGTH && /^[A-Za-z0-9_-]+$/.test(code) ? code : null;
 }
 
-function handleStaticFile(req,res,pathname){
-    let filePath = path.join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname);
+function publicScript(script) {
+  return {
+    code: script.code, title: script.title, originalFilename: script.originalFilename,
+    fileSize: script.fileSize, fileExtension: script.fileExtension, targetIp: script.targetIp,
+    resourceName: script.resourceName, encryptionMode: script.encryptionMode,
+    uploader: script.uploader || script.uploaderName, downloads: script.downloads || 0,
+    createdAt: script.createdAt
+  };
+}
 
-    if(!filePath.startsWith(PUBLIC_DIR)){
-        sendJson(res,403,{error:'Forbidden'});
-        return;
+function serveStatic(req, res, pathname) {
+  const relative = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
+  const filePath = path.resolve(PUBLIC_DIR, relative);
+  if (filePath !== PUBLIC_DIR && !filePath.startsWith(PUBLIC_DIR + path.sep)) {
+    sendJson(res, 403, { success: false, message: 'Forbidden' }); return;
+  }
+  fs.stat(filePath, (err, stats) => {
+    if (err || !stats.isFile()) {
+      const fallback = path.join(PUBLIC_DIR, 'index.html');
+      fs.readFile(fallback, (readErr, content) => {
+        if (readErr) { sendJson(res, 404, { success: false, message: 'Page not found' }); return; }
+        res.writeHead(200, { 'Content-Type': MIME_TYPES['.html'] }); res.end(content);
+      });
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': MIME_TYPES[path.extname(filePath).toLowerCase()] || 'application/octet-stream' });
+    fs.createReadStream(filePath).pipe(res);
+  });
+}
+
+function createServer() {
+  return http.createServer((req, res) => {
+    if (req.method === 'OPTIONS') { res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' }); res.end(); return; }
+    const parsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+    const pathname = parsed.pathname;
+
+    if (pathname === '/api/health') { sendJson(res, 200, { success: true, online: true }); return; }
+
+    if (pathname === '/api/script' || pathname.startsWith('/api/script/')) {
+      const raw = parsed.searchParams.get('code') || pathname.split('/')[3];
+      const code = safeCode(raw);
+      if (!code) { sendJson(res, 400, { success: false, message: 'كود السكربت مطلوب أو غير صالح' }); return; }
+      const script = db.findByCode(code);
+      if (!script) { sendJson(res, 404, { success: false, message: 'لم يتم العثور على سكربت بهذا الكود' }); return; }
+      sendJson(res, 200, { success: true, script: publicScript(script) }); return;
     }
 
-    fs.stat(filePath,(err,stats)=>{
-        if(err || !stats.isFile()){
-            filePath = path.join(PUBLIC_DIR,'index.html');
-        }
+    if (pathname.startsWith('/api/download/')) {
+      const code = safeCode(pathname.slice('/api/download/'.length));
+      if (!code) { sendJson(res, 400, { success: false, message: 'كود التحميل غير صالح' }); return; }
+      const script = db.findByCode(code);
+      if (!script) { sendJson(res, 404, { success: false, message: 'السكربت غير موجود' }); return; }
+      const filePath = db.getFilePath(script.savedFilename);
+      if (!filePath || !fs.existsSync(filePath)) { sendJson(res, 404, { success: false, message: 'ملف السكربت غير موجود على الخادم' }); return; }
+      db.incrementDownload(code);
+      const filename = String(script.originalFilename || `${code}.zip`).replace(/[\r\n"\\]/g, '_');
+      const stat = fs.statSync(filePath);
+      res.writeHead(200, { 'Content-Type': 'application/zip', 'Content-Length': stat.size, 'Content-Disposition': `attachment; filename="${filename}"`, 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' });
+      fs.createReadStream(filePath).pipe(res); return;
+    }
 
-        const ext = path.extname(filePath).toLowerCase();
-        res.writeHead(200,{
-            'Content-Type':MIME_TYPES[ext] || 'application/octet-stream'
-        });
-        fs.createReadStream(filePath).pipe(res);
-    });
-}
+    if (pathname === '/api/stats') { sendJson(res, 200, { success: true, ...db.getStats() }); return; }
 
-function createServer(){
+    // The actual bot encryption route must be implemented by the bot's encryption pipeline.
+    // This server deliberately does not fabricate a license or a protected ZIP.
+    if (pathname === '/api/encrypt') { sendJson(res, 501, { success: false, message: 'التشفير غير مفعّل في خادم البوت الحالي. اربط هذا المسار بمحرك processAndProtectFiles و db.saveScript.' }); return; }
 
-    return http.createServer((req,res)=>{
-
-        if(req.method === 'OPTIONS'){
-            res.writeHead(204);
-            res.end();
-            return;
-        }
-
-        const parsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-        const pathname = parsed.pathname;
-
-        if(pathname === '/api/upload' && req.method === 'POST'){
-            saveUpload(req,res);
-            return;
-        }
-
-        if(pathname.startsWith('/api/download/')){
-            const code = pathname.replace('/api/download/','');
-            const script = db.findByCode(code);
-
-            if(!script){
-                sendJson(res,404,{success:false,message:'غير موجود'});
-                return;
-            }
-
-            const filePath = db.getFilePath(script.savedFilename);
-
-            if(!fs.existsSync(filePath)){
-                sendJson(res,404,{success:false,message:'الملف غير موجود'});
-                return;
-            }
-
-            db.incrementDownload(code);
-
-            const stat = fs.statSync(filePath);
-
-            res.writeHead(200,{
-                'Content-Type':'application/zip',
-                'Content-Length':stat.size,
-                'Content-Disposition':`attachment; filename="${script.originalFilename}"`
-            });
-
-            fs.createReadStream(filePath).pipe(res);
-            return;
-        }
-
-        if(pathname.startsWith('/api/script')){
-            const code = parsed.searchParams.get('code');
-
-            const script = db.findByCode(code);
-
-            if(!script){
-                sendJson(res,404,{success:false});
-                return;
-            }
-
-            sendJson(res,200,{success:true,script});
-            return;
-        }
-
-        if(pathname === '/api/stats'){
-            sendJson(res,200,{success:true,...db.getStats()});
-            return;
-        }
-
-        handleStaticFile(req,res,pathname);
-    });
+    if (pathname.startsWith('/api/')) { sendJson(res, 404, { success: false, message: 'API Route Not Found' }); return; }
+    serveStatic(req, res, pathname);
+  });
 }
 
 module.exports = { createServer };
+
+if (require.main === module) {
+  const port = Number(process.env.PORT || 3000);
+  createServer().listen(port, () => console.log(`RAVX web server listening on ${port}`));
+}
