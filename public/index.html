@@ -1783,22 +1783,32 @@ body {
     }
   </script>
 
-<section class="cyber-card" style="margin-top:25px;text-align:center">
-<h2>📦 رفع ملف ZIP كبير</h2>
-<p>يدعم الرفع المباشر من الموقع حتى 2GB</p>
-<input id="ravxZipUpload" type="file" accept=".zip">
-<button onclick="ravxUploadZip()" class="btn-primary">رفع ZIP</button>
-<div id="ravxUploadResult"></div>
-</section>
+<div id="ravxEncryptOptions" class="cyber-card" style="margin-top:20px">
+<h2>🔐 إعدادات التشفير</h2>
+<label>IP السيرفر</label>
+<input id="ravxIp" placeholder="127.0.0.1">
+<label>نوع التشفير</label>
+<select id="ravxMode">
+<option value="full">تشفير كامل</option>
+<option value="target">تشفير مخصص</option>
+</select>
+<br><br>
+<input id="ravxZip" type="file" accept=".zip">
+<button class="btn-primary" onclick="ravxUpload()">بدء التشفير والرفع</button>
+<p id="ravxResult"></p>
+</div>
 <script>
-async function ravxUploadZip(){
- const f=document.getElementById('ravxZipUpload').files[0];
- if(!f){return alert('اختر ملف ZIP');}
- const r=document.getElementById('ravxUploadResult');
+async function ravxUpload(){
+ const f=document.getElementById('ravxZip').files[0];
+ if(!f)return alert('اختر ZIP');
+ const r=document.getElementById('ravxResult');
  r.innerHTML='جاري الرفع...';
- const res=await fetch('/api/upload',{method:'POST',body:f});
- const data=await res.json();
- r.innerHTML=data.success ? ('تم الرفع: '+data.code) : data.message;
+ let form=new FormData();
+ form.append('file',f);
+ form.append('ip',document.getElementById('ravxIp').value);
+ form.append('mode',document.getElementById('ravxMode').value);
+ let res=await fetch('/api/upload',{method:'POST',body:form});
+ r.innerHTML=await res.text();
 }
 </script>
 
