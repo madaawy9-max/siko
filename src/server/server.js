@@ -1,186 +1,176 @@
+
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const url = require('url');
+const crypto = require('crypto');
+
 const db = require('../database/db');
 
 const PUBLIC_DIR = path.join(__dirname, '../../public');
+const UPLOAD_DIR = path.join(__dirname, '../../storage/uploads');
+
+if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
+
+const MAX_UPLOAD_SIZE = 2 * 1024 * 1024 * 1024;
 
 const MIME_TYPES = {
-  '.html': 'text/html; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.js': 'application/javascript; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
-  '.txt': 'text/plain; charset=utf-8',
-  '.lua': 'text/plain; charset=utf-8',
-  '.zip': 'application/zip'
+    '.html':'text/html; charset=utf-8',
+    '.css':'text/css; charset=utf-8',
+    '.js':'application/javascript; charset=utf-8',
+    '.json':'application/json; charset=utf-8',
+    '.png':'image/png',
+    '.jpg':'image/jpeg',
+    '.jpeg':'image/jpeg',
+    '.svg':'image/svg+xml',
+    '.zip':'application/zip',
+    '.lua':'text/plain; charset=utf-8'
 };
 
-function sendJson(res, statusCode, data) {
-  res.writeHead(statusCode, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-  });
-  res.end(JSON.stringify(data));
+function sendJson(res, code, data){
+    res.writeHead(code,{
+        'Content-Type':'application/json; charset=utf-8',
+        'Access-Control-Allow-Origin':'*',
+        'Access-Control-Allow-Methods':'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers':'Content-Type'
+    });
+    res.end(JSON.stringify(data));
 }
 
-function handleStaticFile(req, res, pathname) {
-  let filePath = path.join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname);
+function saveUpload(req,res){
+    let size = 0;
+    const filename = `upload_${Date.now()}_${crypto.randomBytes(4).toString('hex')}.zip`;
+    const filePath = path.join(UPLOAD_DIR, filename);
+    const stream = fs.createWriteStream(filePath);
 
-  // Security check: prevent directory traversal
-  if (!filePath.startsWith(PUBLIC_DIR)) {
-    sendJson(res, 403, { error: 'Forbidden' });
-    return;
-  }
+    req.on('data', chunk=>{
+        size += chunk.length;
 
-  fs.stat(filePath, (err, stats) => {
-    if (err || !stats.isFile()) {
-      const indexFile = path.join(PUBLIC_DIR, 'index.html');
-      fs.readFile(indexFile, (readErr, content) => {
-        if (readErr) {
-          res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-          res.end('404 Not Found');
-          return;
+        if(size > MAX_UPLOAD_SIZE){
+            req.destroy();
+            stream.destroy();
+            if(fs.existsSync(filePath)) fs.unlinkSync(filePath);
+            sendJson(res,413,{success:false,message:'حجم الملف أكبر من 2GB'});
+            return;
         }
-        res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-        res.end(content);
-      });
-      return;
-    }
 
-    const ext = path.extname(filePath).toLowerCase();
-    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+        stream.write(chunk);
+    });
 
-    res.writeHead(200, { 'Content-Type': contentType });
-    const stream = fs.createReadStream(filePath);
-    stream.pipe(res);
-  });
+    req.on('end',()=>{
+        stream.end();
+
+        const item = db.saveScript({
+            title: filename,
+            originalFilename: filename,
+            savedFilename: filename,
+            fileSize: size,
+            uploadType:'full',
+            encryptionMode:'full',
+            uploaderName:'Website Upload'
+        });
+
+        sendJson(res,200,{
+            success:true,
+            code:item.code,
+            filename,
+            size,
+            download:`/api/download/${item.code}`
+        });
+    });
 }
 
-function createServer() {
-  const server = http.createServer((req, res) => {
-    // Enable CORS preflight
-    if (req.method === 'OPTIONS') {
-      res.writeHead(204, {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-      });
-      res.end();
-      return;
+function handleStaticFile(req,res,pathname){
+    let filePath = path.join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname);
+
+    if(!filePath.startsWith(PUBLIC_DIR)){
+        sendJson(res,403,{error:'Forbidden'});
+        return;
     }
 
-    const parsedUrl = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-    const pathname = parsedUrl.pathname;
-
-    // API Routes
-    if (pathname.startsWith('/api/')) {
-      // GET /api/script/:code or /api/script?code=xxx
-      if (pathname.startsWith('/api/script')) {
-        let code = parsedUrl.searchParams.get('code');
-        if (!code) {
-          const parts = pathname.split('/').filter(Boolean);
-          if (parts.length >= 3) {
-            code = parts[2];
-          }
+    fs.stat(filePath,(err,stats)=>{
+        if(err || !stats.isFile()){
+            filePath = path.join(PUBLIC_DIR,'index.html');
         }
 
-        if (!code) {
-          sendJson(res, 400, { success: false, message: 'كود السكربت مطلوب' });
-          return;
-        }
-
-        const script = db.findByCode(code);
-        if (!script) {
-          sendJson(res, 404, {
-            success: false,
-            message: 'لم يتم العثور على سكربت بهذا الكود. تأكد من صحة الكود وحاول مجدداً.'
-          });
-          return;
-        }
-
-        sendJson(res, 200, {
-          success: true,
-          script: {
-            code: script.code,
-            title: script.title,
-            originalFilename: script.originalFilename,
-            fileSize: script.fileSize,
-            fileExtension: script.fileExtension,
-            targetIp: script.targetIp,
-            resourceName: script.resourceName,
-            encryptionMode: script.encryptionMode,
-            uploader: script.uploader,
-            downloads: script.downloads,
-            createdAt: script.createdAt
-          }
+        const ext = path.extname(filePath).toLowerCase();
+        res.writeHead(200,{
+            'Content-Type':MIME_TYPES[ext] || 'application/octet-stream'
         });
-        return;
-      }
+        fs.createReadStream(filePath).pipe(res);
+    });
+}
 
-      // GET /api/download/:code
-      if (pathname.startsWith('/api/download/')) {
-        const code = pathname.replace('/api/download/', '').trim();
-        const script = db.findByCode(code);
+function createServer(){
 
-        if (!script) {
-          sendJson(res, 404, { success: false, message: 'السكربت غير موجود أو انتهت صلاحيته' });
-          return;
+    return http.createServer((req,res)=>{
+
+        if(req.method === 'OPTIONS'){
+            res.writeHead(204);
+            res.end();
+            return;
         }
 
-        const filePath = db.getFilePath(script.savedFilename);
-        if (!fs.existsSync(filePath)) {
-          sendJson(res, 404, { success: false, message: 'ملف السكربت غير موجود على الخادم' });
-          return;
+        const parsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
+        const pathname = parsed.pathname;
+
+        if(pathname === '/api/upload' && req.method === 'POST'){
+            saveUpload(req,res);
+            return;
         }
 
-        // Increment download count
-        db.incrementDownload(code);
+        if(pathname.startsWith('/api/download/')){
+            const code = pathname.replace('/api/download/','');
+            const script = db.findByCode(code);
 
-        const stat = fs.statSync(filePath);
-        const downloadFilename = script.originalFilename || `${script.code}.zip`;
-        const encodedFilename = encodeURIComponent(downloadFilename);
+            if(!script){
+                sendJson(res,404,{success:false,message:'غير موجود'});
+                return;
+            }
 
-        res.writeHead(200, {
-          'Content-Type': 'application/zip',
-          'Content-Disposition': `attachment; filename="${downloadFilename}"; filename*=UTF-8''${encodedFilename}`,
-          'Content-Length': stat.size,
-          'Access-Control-Allow-Origin': '*'
-        });
+            const filePath = db.getFilePath(script.savedFilename);
 
-        const fileStream = fs.createReadStream(filePath);
-        fileStream.pipe(res);
-        return;
-      }
+            if(!fs.existsSync(filePath)){
+                sendJson(res,404,{success:false,message:'الملف غير موجود'});
+                return;
+            }
 
-      // GET /api/stats
-      if (pathname === '/api/stats') {
-        const stats = db.getStats();
-        sendJson(res, 200, {
-          success: true,
-          ...stats
-        });
-        return;
-      }
+            db.incrementDownload(code);
 
-      // Fallback for unknown API route
-      sendJson(res, 404, { success: false, message: 'API Route Not Found' });
-      return;
-    }
+            const stat = fs.statSync(filePath);
 
-    // Serve static files
-    handleStaticFile(req, res, pathname);
-  });
+            res.writeHead(200,{
+                'Content-Type':'application/zip',
+                'Content-Length':stat.size,
+                'Content-Disposition':`attachment; filename="${script.originalFilename}"`
+            });
 
-  return server;
+            fs.createReadStream(filePath).pipe(res);
+            return;
+        }
+
+        if(pathname.startsWith('/api/script')){
+            const code = parsed.searchParams.get('code');
+
+            const script = db.findByCode(code);
+
+            if(!script){
+                sendJson(res,404,{success:false});
+                return;
+            }
+
+            sendJson(res,200,{success:true,script});
+            return;
+        }
+
+        if(pathname === '/api/stats'){
+            sendJson(res,200,{success:true,...db.getStats()});
+            return;
+        }
+
+        handleStaticFile(req,res,pathname);
+    });
 }
 
 module.exports = { createServer };
