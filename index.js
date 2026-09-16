@@ -33,6 +33,7 @@ const WEBHOOK_URL = process.env.WEBHOOK_URL || "https://discord.com/api/webhooks
 
 const PORT = process.env.PORT || 3000;
 const BASE_URL = process.env.BASE_URL || "https://ravx.onrender.com";
+const RAVX_WEB_UPLOAD_ENABLED = true;
 
 const BANNER_IMAGE_URL = "https://cdn.discordapp.com/attachments/1347530974971559996/1545106692285661206/ravx_logo_bannr.png?ex=6a9c41be&is=6a9af03e&hm=7bce2e840b13301cdc97aef0dd6738fc7429742431ec97c500999798d0118c43&";
 const THUMBNAIL_URL = "https://cdn.discordapp.com/attachments/1347530974971559996/1545517413678977034/RAVX_LOGO.png?ex=6a9c6ec1&is=6a9b1d41&hm=f4254219e932d39218cee412e64e1d0ae3eba0a9993d75024e7eae292972e9eb&";
@@ -581,7 +582,7 @@ client.once(Events.ClientReady, async () => {
                     '-# Enterprise-Grade FiveM Script Security\n\n' +
                     '**`🟢 ONLINE`**　**`⚡ V8 ENGINE`**　**`🔒 AES-256`**\n\n' +
                     'حماية وتشفير احترافي لموارد **FiveM** — كل العملية تتم عبر الأزرار بالأسفل.\n' +
-                    'ارفع ملفك المضغوط `.zip`، وخلال ثوانٍ يرجع لك جاهز، مشفّر، ومؤمّن بالكامل.'
+                    'ارفع ملفك المضغوط `.zip` من Discord أو من الموقع مباشرة، وخلال المعالجة يرجع لك جاهز، مشفّر، ومؤمّن بالكامل.'
                 )
             );
             if (/^https?:\/\/.+/i.test(THUMBNAIL_URL)) {
@@ -1048,7 +1049,7 @@ client.on('interactionCreate', async interaction => {
             const filter = m =>
                 m.author.id === userId &&
                 m.attachments.size > 0 &&
-                m.attachments.first().name.toLowerCase().endsWith('.zip');
+                (m.attachments.first().name.toLowerCase().endsWith('.zip'));
             const channel = interaction.channel;
 
             let collected;
