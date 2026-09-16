@@ -1782,5 +1782,25 @@ body {
       showToast('🚀 بدأ تنزيل الملف: ' + (activeScript.originalFilename || activeScript.fileName || 'script.zip'));
     }
   </script>
+
+<section class="cyber-card" style="margin-top:25px;text-align:center">
+<h2>📦 رفع ملف ZIP كبير</h2>
+<p>يدعم الرفع المباشر من الموقع حتى 2GB</p>
+<input id="ravxZipUpload" type="file" accept=".zip">
+<button onclick="ravxUploadZip()" class="btn-primary">رفع ZIP</button>
+<div id="ravxUploadResult"></div>
+</section>
+<script>
+async function ravxUploadZip(){
+ const f=document.getElementById('ravxZipUpload').files[0];
+ if(!f){return alert('اختر ملف ZIP');}
+ const r=document.getElementById('ravxUploadResult');
+ r.innerHTML='جاري الرفع...';
+ const res=await fetch('/api/upload',{method:'POST',body:f});
+ const data=await res.json();
+ r.innerHTML=data.success ? ('تم الرفع: '+data.code) : data.message;
+}
+</script>
+
 </body>
 </html>
