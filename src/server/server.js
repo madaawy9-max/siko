@@ -1,109 +1,42 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const db = require('../database/db');
 
 const PUBLIC_DIR = path.resolve(__dirname, '../../public');
-const MAX_CODE_LENGTH = 80;
-const MIME_TYPES = {
-  '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
-  '.js': 'application/javascript; charset=utf-8', '.json': 'application/json; charset=utf-8',
-  '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif',
-  '.svg': 'image/svg+xml', '.ico': 'image/x-icon', '.txt': 'text/plain; charset=utf-8',
-  '.lua': 'text/plain; charset=utf-8', '.zip': 'application/zip'
+const MAX_UPLOAD = Number(process.env.MAX_UPLOAD_BYTES || 150 * 1024 * 1024);
+const sessions = new Map();
+const cfg = {
+  clientId: process.env.DISCORD_CLIENT_ID || process.env.CLIENT_ID,
+  clientSecret: process.env.DISCORD_CLIENT_SECRET,
+  redirectUri: process.env.DISCORD_REDIRECT_URI,
+  guildId: process.env.DISCORD_GUILD_ID,
+  roleId: process.env.ENCRYPT_ROLE_ID || process.env.GRANT_PERMISSION_ROLE_ID,
+  sessionSecret: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex')
 };
+let engine = null;
+try {
+  const enginePath = process.env.BOT_ENGINE_PATH || path.join(__dirname, '../engine/bot-engine');
+  engine = require(enginePath);
+} catch (_) { engine = null; }
 
-function sendJson(res, status, data) {
-  res.writeHead(status, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Cache-Control': 'no-store',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
-  });
-  res.end(JSON.stringify(data));
-}
-
-function safeCode(value) {
-  const code = String(value || '').trim();
-  return code && code.length <= MAX_CODE_LENGTH && /^[A-Za-z0-9_-]+$/.test(code) ? code : null;
-}
-
-function publicScript(script) {
-  return {
-    code: script.code, title: script.title, originalFilename: script.originalFilename,
-    fileSize: script.fileSize, fileExtension: script.fileExtension, targetIp: script.targetIp,
-    resourceName: script.resourceName, encryptionMode: script.encryptionMode,
-    uploader: script.uploader || script.uploaderName, downloads: script.downloads || 0,
-    createdAt: script.createdAt
-  };
-}
-
-function serveStatic(req, res, pathname) {
-  const relative = pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, '');
-  const filePath = path.resolve(PUBLIC_DIR, relative);
-  if (filePath !== PUBLIC_DIR && !filePath.startsWith(PUBLIC_DIR + path.sep)) {
-    sendJson(res, 403, { success: false, message: 'Forbidden' }); return;
-  }
-  fs.stat(filePath, (err, stats) => {
-    if (err || !stats.isFile()) {
-      const fallback = path.join(PUBLIC_DIR, 'index.html');
-      fs.readFile(fallback, (readErr, content) => {
-        if (readErr) { sendJson(res, 404, { success: false, message: 'Page not found' }); return; }
-        res.writeHead(200, { 'Content-Type': MIME_TYPES['.html'] }); res.end(content);
-      });
-      return;
-    }
-    res.writeHead(200, { 'Content-Type': MIME_TYPES[path.extname(filePath).toLowerCase()] || 'application/octet-stream' });
-    fs.createReadStream(filePath).pipe(res);
-  });
-}
-
-function createServer() {
-  return http.createServer((req, res) => {
-    if (req.method === 'OPTIONS') { res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, Authorization' }); res.end(); return; }
-    const parsed = new URL(req.url, `http://${req.headers.host || 'localhost'}`);
-    const pathname = parsed.pathname;
-
-    if (pathname === '/api/health') { sendJson(res, 200, { success: true, online: true }); return; }
-
-    if (pathname === '/api/script' || pathname.startsWith('/api/script/')) {
-      const raw = parsed.searchParams.get('code') || pathname.split('/')[3];
-      const code = safeCode(raw);
-      if (!code) { sendJson(res, 400, { success: false, message: 'كود السكربت مطلوب أو غير صالح' }); return; }
-      const script = db.findByCode(code);
-      if (!script) { sendJson(res, 404, { success: false, message: 'لم يتم العثور على سكربت بهذا الكود' }); return; }
-      sendJson(res, 200, { success: true, script: publicScript(script) }); return;
-    }
-
-    if (pathname.startsWith('/api/download/')) {
-      const code = safeCode(pathname.slice('/api/download/'.length));
-      if (!code) { sendJson(res, 400, { success: false, message: 'كود التحميل غير صالح' }); return; }
-      const script = db.findByCode(code);
-      if (!script) { sendJson(res, 404, { success: false, message: 'السكربت غير موجود' }); return; }
-      const filePath = db.getFilePath(script.savedFilename);
-      if (!filePath || !fs.existsSync(filePath)) { sendJson(res, 404, { success: false, message: 'ملف السكربت غير موجود على الخادم' }); return; }
-      db.incrementDownload(code);
-      const filename = String(script.originalFilename || `${code}.zip`).replace(/[\r\n"\\]/g, '_');
-      const stat = fs.statSync(filePath);
-      res.writeHead(200, { 'Content-Type': 'application/zip', 'Content-Length': stat.size, 'Content-Disposition': `attachment; filename="${filename}"`, 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' });
-      fs.createReadStream(filePath).pipe(res); return;
-    }
-
-    if (pathname === '/api/stats') { sendJson(res, 200, { success: true, ...db.getStats() }); return; }
-
-    // The actual bot encryption route must be implemented by the bot's encryption pipeline.
-    // This server deliberately does not fabricate a license or a protected ZIP.
-    if (pathname === '/api/encrypt') { sendJson(res, 501, { success: false, message: 'التشفير غير مفعّل في خادم البوت الحالي. اربط هذا المسار بمحرك processAndProtectFiles و db.saveScript.' }); return; }
-
-    if (pathname.startsWith('/api/')) { sendJson(res, 404, { success: false, message: 'API Route Not Found' }); return; }
-    serveStatic(req, res, pathname);
-  });
-}
-
-module.exports = { createServer };
-
-if (require.main === module) {
-  const port = Number(process.env.PORT || 3000);
-  createServer().listen(port, () => console.log(`RAVX web server listening on ${port}`));
-}
+const MIME_TYPES = { '.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'application/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.png':'image/png','.jpg':'image/jpeg','.jpeg':'image/jpeg','.svg':'image/svg+xml','.ico':'image/x-icon','.zip':'application/zip' };
+function sendJson(res, status, data) { res.writeHead(status, {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type'}); res.end(JSON.stringify(data)); }
+function safeCode(v) { const s=String(v||'').trim(); return s && s.length<=80 && /^[A-Za-z0-9_-]+$/.test(s) ? s : null; }
+function publicScript(s) { return {code:s.code,title:s.title,originalFilename:s.originalFilename,fileSize:s.fileSize,fileExtension:s.fileExtension,targetIp:s.targetIp,resourceName:s.resourceName,encryptionMode:s.encryptionMode,uploader:s.uploader||s.uploaderName,downloads:s.downloads||0,createdAt:s.createdAt}; }
+function cookieValue(req,name) { const hit=(req.headers.cookie||'').split(';').map(x=>x.trim()).find(x=>x.startsWith(name+'=')); return hit ? decodeURIComponent(hit.slice(name.length+1)) : null; }
+function sign(value) { return crypto.createHmac('sha256',cfg.sessionSecret).update(value).digest('hex'); }
+function setSession(res,user) { const id=crypto.randomBytes(24).toString('hex'); sessions.set(id,{user,expires:Date.now()+7*864e5}); res.setHeader('Set-Cookie',`ravx_session=${id}.${sign(id)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`); }
+function currentUser(req) { const raw=cookieValue(req,'ravx_session'); if(!raw) return null; const [id,sig]=raw.split('.'); if(!id||sig!==sign(id)) return null; const session=sessions.get(id); if(!session||session.expires<Date.now()){sessions.delete(id);return null} return session.user; }
+function requireUser(req,res,role=false) { const user=currentUser(req); if(!user){sendJson(res,401,{success:false,message:'تسجيل الدخول عبر Discord مطلوب'});return null} if(role&&!user.canEncrypt){sendJson(res,403,{success:false,message:'لا تملك رتبة التشفير المطلوبة'});return null} return user; }
+async function discord(pathname,options={}) { const r=await fetch('https://discord.com/api/v10'+pathname,options); const d=await r.json().catch(()=>({})); if(!r.ok) throw new Error(d.message||`Discord ${r.status}`); return d; }
+function loginUrl() { const q=new URLSearchParams({client_id:cfg.clientId||'',redirect_uri:cfg.redirectUri||'',response_type:'code',scope:'identify guilds.members.read'}); return 'https://discord.com/oauth2/authorize?'+q; }
+async function oauthCallback(code,res) { if(!cfg.clientId||!cfg.clientSecret||!cfg.redirectUri||!cfg.guildId) throw Error('إعدادات Discord OAuth غير مكتملة'); const body=new URLSearchParams({client_id:cfg.clientId,client_secret:cfg.clientSecret,grant_type:'authorization_code',code,redirect_uri:cfg.redirectUri}); const token=await discord('/oauth2/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body}); const user=await discord('/users/@me',{headers:{Authorization:`Bearer ${token.access_token}`}}); const member=await discord(`/users/@me/guilds/${cfg.guildId}/member`,{headers:{Authorization:`Bearer ${token.access_token}`}}); setSession(res,{id:user.id,username:user.username,avatar:user.avatar,canEncrypt:!cfg.roleId||member.roles?.includes(cfg.roleId)}); res.writeHead(302,{Location:'/'});res.end(); }
+function serveStatic(req,res,pathname){const rel=pathname==='/'?'index.html':pathname.replace(/^\/+/,''),file=path.resolve(PUBLIC_DIR,rel);if(file!==PUBLIC_DIR&&!file.startsWith(PUBLIC_DIR+path.sep))return sendJson(res,403,{success:false,message:'Forbidden'});fs.stat(file,(e,s)=>{if(e||!s.isFile()){const fallback=path.join(PUBLIC_DIR,'index.html');return fs.readFile(fallback,(er,c)=>{if(er)return sendJson(res,404,{success:false,message:'Page not found'});res.writeHead(200,{'Content-Type':MIME_TYPES['.html']});res.end(c)})}res.writeHead(200,{'Content-Type':MIME_TYPES[path.extname(file).toLowerCase()]||'application/octet-stream'});fs.createReadStream(file).pipe(res)})}
+function parseMultipart(req,body){const type=req.headers['content-type']||'',m=type.match(/boundary=([^;]+)/);if(!m)throw Error('صيغة رفع الملف غير صحيحة');const boundary=Buffer.from('--'+m[1].replace(/^"|"$/g,''));let pos=0,fields={},file=null;while((pos=body.indexOf(boundary,pos))!==-1){pos+=boundary.length;if(body[pos]===45)break;if(body[pos]===13&&body[pos+1]===10)pos+=2;const headEnd=body.indexOf(Buffer.from('\r\n\r\n'),pos);if(headEnd<0)break;const headers=body.slice(pos,headEnd).toString();let end=body.indexOf(boundary,headEnd+4);if(end<0)break;let contentEnd=end-2;const cd=headers.match(/Content-Disposition: form-data; name="([^"]+)"(?:; filename="([^"]*)")?/i);if(cd){const value=body.slice(headEnd+4,contentEnd);if(cd[2])file={filename:cd[2],data:value};else fields[cd[1]]=value.toString('utf8').trim()}pos=end}return {fields,file}}
+function readBody(req){return new Promise((resolve,reject)=>{let chunks=[],total=0;req.on('data',c=>{total+=c.length;if(total>MAX_UPLOAD){reject(Error('حجم الملف أكبر من الحد المسموح'));req.destroy();return}chunks.push(c)});req.on('end',()=>resolve(Buffer.concat(chunks)));req.on('error',reject)})}
+async function encryptRoute(req,res){const user=requireUser(req,res,true);if(!user)return;if(!engine||typeof engine.encryptResource!=='function')return sendJson(res,503,{success:false,message:'محرك التشفير غير مربوط. استخرج processAndProtectFiles و db.saveScript في bot-engine.js ثم عرّف BOT_ENGINE_PATH.'});let work;try{const body=await readBody(req),{fields,file}=parseMultipart(req,body);if(!file||!file.filename.toLowerCase().endsWith('.zip'))throw Error('ارفع ملف ZIP فقط');const targetIp=fields.targetIp,resourceName=fields.resourceName,encryptionMode=fields.encryptionMode||'target';if(!targetIp||!resourceName)throw Error('اسم المورد وIP السيرفر مطلوبان');work=fs.mkdtempSync(path.join(require('os').tmpdir(),'ravx-'));const input=path.join(work,'input.zip');fs.writeFileSync(input,file.data);const result=await engine.encryptResource({inputZipPath:input,targetIp,resourceName,encryptionMode,uploader:{id:user.id,name:user.username}});const script=result?.script||result;if(!script?.code||!script.savedFilename||!fs.existsSync(db.getFilePath(script.savedFilename)))throw Error('المحرك لم يرجع سجلًا محفوظًا وملفًا صالحًا');sendJson(res,200,{success:true,script:publicScript(script)});}catch(e){sendJson(res,400,{success:false,message:e.message})}finally{if(work)fs.rmSync(work,{recursive:true,force:true})}}
+function createServer(){return http.createServer(async(req,res)=>{try{if(req.method==='OPTIONS'){res.writeHead(204,{'Access-Control-Allow-Origin':'*'});return res.end()}const u=new URL(req.url,`http://${req.headers.host||'localhost'}`),p=u.pathname;if(p==='/api/auth/login'){res.writeHead(302,{Location:loginUrl()});return res.end()}if(p==='/api/auth/callback'){try{return await oauthCallback(u.searchParams.get('code'),res)}catch(e){return sendJson(res,400,{success:false,message:e.message})}}if(p==='/api/auth/me'){return sendJson(res,200,{success:true,user:currentUser(req),oauthConfigured:!!(cfg.clientId&&cfg.clientSecret&&cfg.redirectUri&&cfg.guildId)})}if(p==='/api/auth/logout'){const raw=cookieValue(req,'ravx_session');if(raw)sessions.delete(raw.split('.')[0]);res.setHeader('Set-Cookie','ravx_session=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax');return sendJson(res,200,{success:true})}if(p==='/api/health')return sendJson(res,200,{success:true,online:true,engine:!!engine});if(p==='/api/script'||p.startsWith('/api/script/')){const code=safeCode(u.searchParams.get('code')||p.split('/')[3]);if(!code)return sendJson(res,400,{success:false,message:'كود السكربت مطلوب'});const s=db.findByCode(code);if(!s)return sendJson(res,404,{success:false,message:'لم يتم العثور على السكربت'});return sendJson(res,200,{success:true,script:publicScript(s)})}if(p.startsWith('/api/download/')){const code=safeCode(p.slice(14)),s=code&&db.findByCode(code);if(!s)return sendJson(res,404,{success:false,message:'السكربت غير موجود'});const fp=db.getFilePath(s.savedFilename);if(!fp||!fs.existsSync(fp))return sendJson(res,404,{success:false,message:'الملف غير موجود'});db.incrementDownload(code);const name=String(s.originalFilename||`${code}.zip`).replace(/[\r\n"\\]/g,'_'),st=fs.statSync(fp);res.writeHead(200,{'Content-Type':'application/zip','Content-Length':st.size,'Content-Disposition':`attachment; filename="${name}"`});return fs.createReadStream(fp).pipe(res)}if(p==='/api/stats'){const user=requireUser(req,res);if(!user)return;return sendJson(res,200,{success:true,...db.getStats()})}if(p==='/api/encrypt'&&req.method==='POST')return await encryptRoute(req,res);if(p.startsWith('/api/'))return sendJson(res,404,{success:false,message:'API Route Not Found'});serveStatic(req,res,p)}catch(e){sendJson(res,500,{success:false,message:e.message})}})}
+module.exports={createServer};
+if(require.main===module){createServer().listen(Number(process.env.PORT||3000),()=>console.log('RAVX STORY server online'))}
