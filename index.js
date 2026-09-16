@@ -33,7 +33,6 @@ const WEBHOOK_URL = process.env.WEBHOOK_URL || "https://discord.com/api/webhooks
 
 const PORT = process.env.PORT || 3000;
 const BASE_URL = process.env.BASE_URL || "https://ravx.onrender.com";
-const RAVX_WEB_UPLOAD_ENABLED = true;
 
 const BANNER_IMAGE_URL = "https://cdn.discordapp.com/attachments/1347530974971559996/1545106692285661206/ravx_logo_bannr.png?ex=6a9c41be&is=6a9af03e&hm=7bce2e840b13301cdc97aef0dd6738fc7429742431ec97c500999798d0118c43&";
 const THUMBNAIL_URL = "https://cdn.discordapp.com/attachments/1347530974971559996/1545517413678977034/RAVX_LOGO.png?ex=6a9c6ec1&is=6a9b1d41&hm=f4254219e932d39218cee412e64e1d0ae3eba0a9993d75024e7eae292972e9eb&";
@@ -582,7 +581,7 @@ client.once(Events.ClientReady, async () => {
                     '-# Enterprise-Grade FiveM Script Security\n\n' +
                     '**`🟢 ONLINE`**　**`⚡ V8 ENGINE`**　**`🔒 AES-256`**\n\n' +
                     'حماية وتشفير احترافي لموارد **FiveM** — كل العملية تتم عبر الأزرار بالأسفل.\n' +
-                    'ارفع ملفك المضغوط `.zip` من Discord أو من الموقع مباشرة، وخلال المعالجة يرجع لك جاهز، مشفّر، ومؤمّن بالكامل.'
+                    'اختر نوع التشفير ثم أدخل IP السيرفر، وبعدها ارفع ملف ZIP وسيتم تجهيز السكربت المحمي.'
                 )
             );
             if (/^https?:\/\/.+/i.test(THUMBNAIL_URL)) {
@@ -598,7 +597,7 @@ client.once(Events.ClientReady, async () => {
                         '> **1.** اضغط زر **🔐 بدء التشفير**\n' +
                         '> **2.** اختر **نمط التشفير** المناسب لسكريبتك\n' +
                         '> **3.** أدخل **الآي بي** المخوّل بتشغيل السكريبت\n' +
-                        '> **4.** ارفع **ملف الـ `.zip`** مباشرة في الشات\n' +
+                        '> **4.** ارفع **ملف الـ `.zip`** من Discord أو من صفحة الرفع\n' +
                         '> **5.** استلم ملفك محمي + كود ورابط تحميل فوري'
                     )
                 )
@@ -625,6 +624,7 @@ client.once(Events.ClientReady, async () => {
 
             const rowActions = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId('btn_start_protect').setLabel('🔐 بدء التشفير').setStyle(ButtonStyle.Success),
+new ButtonBuilder().setCustomId('btn_web_upload').setLabel('🌐 رفع من الموقع').setStyle(ButtonStyle.Primary),
                 new ButtonBuilder().setCustomId('btn_check_license').setLabel('🔍 فحص الرخصة').setStyle(ButtonStyle.Primary),
                 new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('🌐 بوابة التحميل').setURL(BASE_URL)
             );
@@ -790,7 +790,19 @@ client.on('interactionCreate', async interaction => {
         const userId = interaction.user.id;
         if (!userSessionData.has(userId)) userSessionData.set(userId, {});
 
-        if (interaction.customId === 'btn_start_protect') {
+        
+        if (interaction.customId === 'btn_web_upload') {
+            return await interaction.reply({
+                content:
+                    '🌐 **رفع من الموقع**\n' +
+                    '━━━━━━━━━━━━━━\n' +
+                    `📦 افتح صفحة الرفع: ${BASE_URL}/upload\n` +
+                    'اختر ZIP ثم أكمل خطوات IP ونوع التشفير.',
+                flags: MessageFlags.Ephemeral
+            });
+        }
+
+if (interaction.customId === 'btn_start_protect') {
             if (!hasEncryptAccess(interaction)) {
                 return await interaction.reply({
                     content: '⛔ ما عندك صلاحية استخدام ميزة التشفير. تواصل مع الإدارة عشان يمنحونك وصول.',
@@ -1049,7 +1061,7 @@ client.on('interactionCreate', async interaction => {
             const filter = m =>
                 m.author.id === userId &&
                 m.attachments.size > 0 &&
-                (m.attachments.first().name.toLowerCase().endsWith('.zip'));
+                m.attachments.first().name.toLowerCase().endsWith('.zip');
             const channel = interaction.channel;
 
             let collected;
