@@ -1,34 +1,23 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>بوابة تحميل وتشفير السكربتات | RAVX Security Systems</title>
-  
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Tajawal:wght@400;500;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-  
-  <style id="ravx-embedded-styles">
 /* =========================================================
-   RAVX SECURITY SYSTEMS - EYE-COMFORTABLE V7.4.2 STYLES
+   RAVX SECURITY SYSTEMS - CYBER INDUSTRIAL V7 STYLESHEET
    ========================================================= */
 
 :root {
   --bg-dark: #070913;
-  --bg-header: #090b14;
   --bg-surface: #0c1020;
-  --bg-card: #0c1020;
-  --bg-card-border: rgba(99, 102, 241, 0.22);
-  --bg-input: #060810;
+  --bg-card: rgba(13, 18, 36, 0.82);
+  --bg-card-border: rgba(99, 102, 241, 0.25);
   
   --primary: #6366f1;
   --primary-hover: #4f46e5;
-  --primary-glow: rgba(99, 102, 241, 0.35);
+  --primary-glow: rgba(99, 102, 241, 0.5);
   
   --accent-cyan: #00f0ff;
+  --accent-cyan-glow: rgba(0, 240, 255, 0.4);
+  
   --accent-emerald: #10b981;
+  --accent-emerald-glow: rgba(16, 185, 129, 0.45);
+  
   --accent-amber: #f59e0b;
   --accent-rose: #f43f5e;
   
@@ -36,7 +25,7 @@
   --text-muted: #94a3b8;
   --text-dim: #64748b;
   
-  --radius-lg: 16px;
+  --radius-lg: 18px;
   --radius-md: 12px;
   --radius-sm: 8px;
   
@@ -55,1302 +44,1153 @@ body {
   background-color: var(--bg-dark);
   color: var(--text-main);
   min-height: 100vh;
-  display: flex;
-  flex-direction: column;
   overflow-x: hidden;
+  position: relative;
+  line-height: 1.6;
 }
 
-/* Cyber mesh background */
-.mesh-bg {
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* ================= AMBIENT CYBER EFFECTS ================= */
+
+.cyber-glow {
   position: fixed;
-  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(140px);
+  z-index: 0;
+  opacity: 0.22;
+  animation: floatAmbient 12s ease-in-out infinite alternate;
+}
+
+.sphere-primary {
+  width: 650px;
+  height: 650px;
+  top: -150px;
+  right: -120px;
+  background: radial-gradient(circle, var(--primary) 0%, rgba(99, 102, 241, 0) 70%);
+}
+
+.sphere-cyan {
+  width: 550px;
+  height: 550px;
+  bottom: -100px;
+  left: -100px;
+  background: radial-gradient(circle, var(--accent-cyan) 0%, rgba(0, 240, 255, 0) 70%);
+  animation-delay: -5s;
+}
+
+.sphere-emerald {
+  width: 450px;
+  height: 450px;
+  top: 40%;
+  left: 30%;
+  background: radial-gradient(circle, var(--accent-emerald) 0%, rgba(16, 185, 129, 0) 70%);
+  opacity: 0.08;
+}
+
+@keyframes floatAmbient {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(30px, 40px) scale(1.08); }
+}
+
+.cyber-grid-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: 
+    linear-gradient(rgba(99, 102, 241, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
   pointer-events: none;
   z-index: 0;
-  background-image: radial-gradient(rgba(99, 102, 241, 0.08) 1px, transparent 1px);
-  background-size: 24px 24px;
 }
 
-/* Header */
-header {
-  position: sticky;
+.cyber-scanline-ambient {
+  position: fixed;
   top: 0;
-  z-index: 40;
-  background: rgba(9, 11, 20, 0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  opacity: 0.35;
+  z-index: 1;
 }
 
-.header-container {
-  max-width: 1040px;
+/* ================= CONTAINER & LAYOUT ================= */
+
+.site-container {
+  max-width: 980px;
   margin: 0 auto;
-  padding: 0 16px;
-  height: 64px;
+  padding: 2.2rem 1.5rem;
+  position: relative;
+  z-index: 2;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ================= HEADER ================= */
+
+.header {
+  display: flex;
   justify-content: space-between;
-  gap: 16px;
+  align-items: center;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .brand-group {
   display: flex;
   align-items: center;
-  gap: 12px;
-  cursor: pointer;
+  gap: 1.1rem;
 }
 
-.brand-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: #0c1020;
-  border: 1px solid rgba(99, 102, 241, 0.35);
+.brand-avatar-wrapper {
+  position: relative;
+  width: 56px;
+  height: 56px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
+.radar-circle {
+  position: absolute;
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 1px dashed rgba(0, 240, 255, 0.45);
+  animation: spinRadar 14s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes spinRadar {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.brand-logo {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  border: 2px solid var(--primary);
+  box-shadow: 0 0 20px var(--primary-glow);
+  object-fit: cover;
+  background: #080c1c;
+}
+
+.avatar-status-dot {
+  position: absolute;
+  bottom: 0px;
+  left: 0px;
+  width: 12px;
+  height: 12px;
+  background: var(--accent-emerald);
+  border: 2px solid #070913;
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent-emerald);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
 .brand-title {
   font-family: var(--font-mono);
-  font-size: 16px;
-  font-weight: 800;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  font-size: 1.65rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  background: linear-gradient(90deg, #ffffff, #a5b4fc, #00f0ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.brand-title span {
-  color: #818cf8;
-  font-family: var(--font-arabic);
-  font-size: 13px;
-}
-
-.badge-v {
-  font-size: 10px;
-  font-family: var(--font-mono);
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(99, 102, 241, 0.15);
+.version-tag {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.5rem;
+  background: rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(99, 102, 241, 0.4);
   color: #a5b4fc;
-  border: 1px solid rgba(99, 102, 241, 0.3);
-}
-
-/* Navigation Tabs */
-.nav-tabs {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(15, 20, 36, 0.8);
-  padding: 4px;
-  border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.1);
-}
-
-.nav-tab {
-  padding: 7px 14px;
-  border-radius: 9px;
-  font-size: 12px;
+  border-radius: 6px;
   font-weight: 600;
-  color: var(--text-muted);
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.2s;
-  white-space: nowrap;
 }
 
-.nav-tab:hover {
-  color: #ffffff;
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.nav-tab.active {
-  background: var(--primary);
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
-}
-
-/* Server status pill */
-.server-pill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 8px;
-  background: rgba(15, 20, 36, 0.6);
-  border: 1px solid rgba(148, 163, 184, 0.1);
-  font-family: var(--font-mono);
-  font-size: 11px;
+.brand-subtitle {
+  font-size: 0.85rem;
   color: var(--text-muted);
 }
 
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--accent-emerald);
-  box-shadow: 0 0 6px var(--accent-emerald);
+.header-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
-/* Main Layout */
-main {
-  flex: 1;
-  position: relative;
-  z-index: 10;
-  max-width: 960px;
-  width: 100%;
-  margin: 0 auto;
-  padding: 28px 16px 40px;
-}
-
-.page-section {
-  display: none;
-}
-
-.page-section.active {
-  display: block;
-  animation: fadeIn 0.25s ease-out;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Eye-Friendly Cards */
-.card {
-  background: var(--bg-card);
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-  margin-bottom: 20px;
-}
-
-.section-header {
-  text-align: center;
-  margin-bottom: 24px;
-}
-
-.section-tag {
+.telemetry-badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
-  border-radius: 20px;
-  background: rgba(99, 102, 241, 0.1);
-  border: 1px solid rgba(99, 102, 241, 0.2);
-  color: #a5b4fc;
-  font-size: 11px;
-  font-family: var(--font-mono);
-  margin-bottom: 8px;
-}
-
-.section-title {
-  font-size: 22px;
-  font-weight: 800;
-  color: #ffffff;
-  margin-bottom: 6px;
-}
-
-.section-subtitle {
-  font-size: 13px;
-  color: var(--text-muted);
-  max-width: 520px;
-  margin: 0 auto;
-  line-height: 1.5;
-}
-
-/* Form Styles */
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-label {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 13px;
+  gap: 0.55rem;
+  padding: 0.45rem 0.95rem;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: var(--accent-emerald);
+  border-radius: 999px;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: #e2e8f0;
-  margin-bottom: 8px;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);
 }
 
-.input-wrapper {
+.ping-dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--accent-emerald);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--accent-emerald);
+  animation: pulseDot 2s infinite;
+}
+
+@keyframes pulseDot {
+  0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+  70% { transform: scale(1); box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+  100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+.security-level-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.85rem;
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  color: var(--accent-cyan);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* ================= HERO SECTION ================= */
+
+.main-content {
+  flex: 1;
+  padding: 3.2rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2.2rem;
+}
+
+.hero-section {
+  text-align: center;
+  max-width: 740px;
+  margin: 0 auto;
+}
+
+.hero-tagline-wrap {
+  margin-bottom: 1.1rem;
+}
+
+.cyber-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  padding: 0.35rem 0.95rem;
+  border-radius: 999px;
+  letter-spacing: 1px;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
+}
+
+.badge-icon {
+  color: #ffd700;
+}
+
+.hero-title {
+  font-size: 2.35rem;
+  font-weight: 900;
+  color: #ffffff;
+  margin-bottom: 0.9rem;
+  line-height: 1.35;
+}
+
+.highlight-text {
+  background: linear-gradient(135deg, #a5b4fc 0%, #6366f1 50%, #00f0ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-desc {
+  color: var(--text-muted);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+/* ================= CYBER CARDS & HUD BRACKETS ================= */
+
+.cyber-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--bg-card-border);
+  border-radius: var(--radius-lg);
+  padding: 2.2rem;
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+/* Corner HUD Brackets */
+.bracket {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-color: var(--accent-cyan);
+  pointer-events: none;
+  opacity: 0.75;
+}
+
+.bracket.top-right {
+  top: 6px;
+  right: 6px;
+  border-top: 2px solid var(--accent-cyan);
+  border-right: 2px solid var(--accent-cyan);
+}
+
+.bracket.top-left {
+  top: 6px;
+  left: 6px;
+  border-top: 2px solid var(--accent-cyan);
+  border-left: 2px solid var(--accent-cyan);
+}
+
+.bracket.bottom-right {
+  bottom: 6px;
+  right: 6px;
+  border-bottom: 2px solid var(--accent-cyan);
+  border-right: 2px solid var(--accent-cyan);
+}
+
+.bracket.bottom-left {
+  bottom: 6px;
+  left: 6px;
+  border-bottom: 2px solid var(--accent-cyan);
+  border-left: 2px solid var(--accent-cyan);
+}
+
+.card-scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-cyan), transparent);
+  animation: scanlineMove 6s ease-in-out infinite;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+@keyframes scanlineMove {
+  0% { transform: translateY(0); opacity: 0; }
+  50% { opacity: 0.8; }
+  100% { transform: translateY(350px); opacity: 0; }
+}
+
+/* ================= INPUT FORM ================= */
+
+.input-card {
+  max-width: 740px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+}
+
+.input-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.label-icon {
+  font-size: 1.1rem;
+}
+
+.input-hint {
+  font-size: 0.8rem;
+  color: var(--accent-cyan);
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+}
+
+.input-group-row {
+  display: flex;
+  gap: 0.85rem;
+}
+
+.input-container {
+  position: relative;
+  flex: 1;
   display: flex;
   align-items: center;
 }
 
-.text-input {
-  width: 100%;
-  padding: 12px 14px 12px 85px;
-  background: var(--bg-input);
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: var(--radius-md);
-  color: #ffffff;
-  font-size: 14px;
-  font-family: var(--font-mono);
-  letter-spacing: 0.5px;
-  outline: none;
-  transition: border-color 0.2s;
+.input-prefix-icon {
+  position: absolute;
+  right: 14px;
+  color: var(--accent-cyan);
+  font-size: 1rem;
+  font-weight: 700;
+  pointer-events: none;
 }
 
-.text-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+.input-container input {
+  width: 100%;
+  background: rgba(8, 12, 24, 0.85);
+  border: 1.5px solid rgba(99, 102, 241, 0.4);
+  border-radius: var(--radius-md);
+  padding: 1rem 3.2rem 1rem 5.2rem;
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: all 0.25s ease;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.4);
+}
+
+.input-container input:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 20px var(--accent-cyan-glow), inset 0 2px 5px rgba(0, 0, 0, 0.4);
 }
 
 .btn-paste {
   position: absolute;
   left: 8px;
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
+  top: 50%;
+  transform: translateY(-50%);
   background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: var(--text-main);
-  font-size: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text-muted);
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
   transition: all 0.2s;
 }
 
 .btn-paste:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
-/* Buttons */
 .btn-primary {
-  width: 100%;
-  padding: 13px 20px;
-  background: var(--primary);
+  background: linear-gradient(135deg, var(--primary) 0%, #4338ca 100%);
   color: #ffffff;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--radius-md);
-  font-size: 14px;
+  padding: 0 1.8rem;
+  font-size: 1.05rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s;
+  gap: 0.6rem;
+  transition: all 0.25s ease;
+  box-shadow: 0 6px 20px var(--primary-glow);
+  white-space: nowrap;
 }
 
 .btn-primary:hover {
-  background: var(--primary-hover);
+  background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(99, 102, 241, 0.65);
 }
 
-.btn-secondary {
-  padding: 12px 18px;
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Demo Pills */
+.quick-demo-wrapper {
+  margin-top: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.demo-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.demo-pills {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.demo-pill {
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  color: #c7d2fe;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.demo-pill:hover {
+  background: rgba(99, 102, 241, 0.3);
+  border-color: var(--accent-cyan);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* ================= SCANNING & TERMINAL BAR ================= */
+
+.scanning-box {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: rgba(8, 12, 24, 0.9);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0, 240, 255, 0.1);
+}
+
+.scanning-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--accent-cyan);
+  margin-bottom: 0.75rem;
+}
+
+.scanning-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 240, 255, 0.3);
+  border-top-color: var(--accent-cyan);
+  border-radius: 50%;
+  animation: spinRadar 0.8s linear infinite;
+}
+
+.scanning-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent-cyan));
+  transition: width 0.2s ease;
+}
+
+/* Status Box */
+.status-box {
+  margin-top: 1.25rem;
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.status-box.error {
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  color: #fda4af;
+}
+
+/* ================= SCRIPT RESULT CARD ================= */
+
+.result-card {
+  max-width: 740px;
+  margin: 0 auto;
+  width: 100%;
+  border-color: rgba(16, 185, 129, 0.45);
+  box-shadow: 0 15px 50px rgba(16, 185, 129, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  animation: slideInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInUp {
+  from { opacity: 0; transform: translateY(25px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1.4rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 1.6rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.resource-meta {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+}
+
+.resource-icon-box {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(0, 240, 255, 0.15));
+  border: 1.5px solid rgba(0, 240, 255, 0.4);
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.85rem;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.25);
+}
+
+.resource-top-tags {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.tag-category {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.tag-version {
+  font-size: 0.72rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--accent-cyan);
+  padding: 0.1rem 0.45rem;
+  border-radius: 4px;
+}
+
+.resource-title {
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.5px;
+}
+
+.verified-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.45);
+  color: var(--accent-emerald);
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+}
+
+.verified-pulse {
+  width: 8px;
+  height: 8px;
+  background: var(--accent-emerald);
+  border-radius: 50%;
+  animation: pulseDot 2s infinite;
+}
+
+/* Details Bento Grid */
+.details-bento-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.detail-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.9rem;
+  background: rgba(9, 13, 26, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 1rem 1.15rem;
+  border-radius: var(--radius-md);
+  transition: border-color 0.2s;
+}
+
+.detail-cell:hover {
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+.detail-cell-icon {
+  font-size: 1.4rem;
+  margin-top: 2px;
+}
+
+.detail-cell-content {
+  flex: 1;
+}
+
+.cell-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.cell-val-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.cell-value {
+  font-size: 0.95rem;
+  color: #ffffff;
+}
+
+.mini-copy-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mini-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+}
+
+.compression-tag {
+  font-size: 0.72rem;
+  background: rgba(0, 240, 255, 0.1);
+  color: var(--accent-cyan);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.status-live-tag {
+  font-size: 0.72rem;
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--accent-emerald);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+/* Checksum Bar */
+.checksum-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: rgba(7, 10, 20, 0.8);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-muted);
+  overflow: hidden;
+}
+
+.hash-label {
+  color: var(--accent-cyan);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.hash-value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+/* Security Banner */
+.security-banner {
+  position: relative;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius-md);
+  margin-bottom: 1.75rem;
+  overflow: hidden;
+}
+
+.sec-hazard-stripe {
+  height: 4px;
+  background: repeating-linear-gradient(
+    45deg,
+    var(--accent-amber),
+    var(--accent-amber) 10px,
+    #070913 10px,
+    #070913 20px
+  );
+}
+
+.sec-content {
+  display: flex;
+  gap: 0.9rem;
+  padding: 1.1rem 1.25rem;
+  color: #fef08a;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.sec-icon {
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+/* Action Area */
+.action-buttons-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.btn-download-glow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.2rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #ffffff;
+  text-decoration: none;
+  padding: 1.2rem 1.8rem;
+  border-radius: var(--radius-md);
+  box-shadow: 0 6px 25px rgba(16, 185, 129, 0.45);
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-download-glow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(16, 185, 129, 0.65);
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+}
+
+.btn-dl-icon-wrap {
+  width: 44px;
+  height: 44px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.btn-dl-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+
+.dl-title {
+  font-size: 1.18rem;
+  font-weight: 800;
+}
+
+.dl-subtitle {
+  font-size: 0.82rem;
+  opacity: 0.9;
+}
+
+.btn-dl-speed-badge {
+  font-size: 0.75rem;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.btn-share-link {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  color: var(--text-main);
+  color: var(--text-muted);
+  padding: 0.85rem;
   border-radius: var(--radius-md);
-  font-size: 13px;
+  font-size: 0.92rem;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  text-decoration: none;
+  gap: 0.5rem;
   transition: all 0.2s;
 }
 
-.btn-secondary:hover {
+.btn-share-link:hover {
   background: rgba(255, 255, 255, 0.12);
-}
-
-/* Dropdown list of existing scripts */
-.dropdown-toggle {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 11px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.dropdown-toggle:hover {
-  color: #a5b4fc;
-}
-
-.dropdown-menu {
-  position: absolute;
-  left: 0;
-  top: 24px;
-  z-index: 30;
-  width: 240px;
-  background: #0f1424;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: var(--radius-md);
-  padding: 6px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-  display: none;
-}
-
-.dropdown-menu.show {
-  display: block;
-}
-
-.dropdown-item {
-  width: 100%;
-  text-align: right;
-  padding: 8px 10px;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  color: var(--text-main);
-  font-size: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.dropdown-item:hover {
-  background: rgba(99, 102, 241, 0.15);
-}
-
-/* Details Grid */
-.details-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
-  margin: 18px 0;
-}
-
-.meta-box {
-  background: rgba(6, 8, 16, 0.6);
-  border: 1px solid rgba(148, 163, 184, 0.1);
-  border-radius: var(--radius-md);
-  padding: 12px 14px;
-}
-
-.meta-box-label {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.meta-box-value {
-  font-size: 13px;
-  font-weight: 700;
   color: #ffffff;
-  font-family: var(--font-mono);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
-/* Mode selectors */
-.mode-grid {
+/* ================= FEATURES GRID ================= */
+
+.features-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.4rem;
+  margin-top: 1rem;
 }
 
-.mode-card {
-  background: rgba(6, 8, 16, 0.5);
-  border: 1px solid rgba(148, 163, 184, 0.12);
+.feature-card {
+  background: rgba(13, 18, 36, 0.5);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: var(--radius-md);
-  padding: 12px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.mode-card:hover {
-  border-color: rgba(99, 102, 241, 0.4);
-}
-
-.mode-card.selected {
-  background: rgba(99, 102, 241, 0.12);
-  border-color: var(--primary);
-}
-
-.mode-card-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #ffffff;
-  margin-bottom: 4px;
-}
-
-.mode-card-desc {
-  font-size: 11px;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
-
-/* Dropzone */
-.upload-dropzone {
-  border: 2px dashed rgba(148, 163, 184, 0.25);
-  border-radius: var(--radius-lg);
-  padding: 32px 16px;
-  text-align: center;
-  background: rgba(6, 8, 16, 0.4);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.upload-dropzone:hover {
-  border-color: var(--primary);
-  background: rgba(99, 102, 241, 0.05);
-}
-
-/* Script Library Grid */
-.library-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 14px;
-}
-
-.lib-card {
-  background: var(--bg-card);
-  border: 1px solid rgba(148, 163, 184, 0.15);
-  border-radius: var(--radius-md);
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 12px;
-  transition: all 0.2s;
-}
-
-.lib-card:hover {
-  border-color: rgba(99, 102, 241, 0.4);
-  transform: translateY(-2px);
-}
-
-/* Progress and scanning */
-.progress-bar {
-  width: 100%;
-  height: 6px;
-  background: #060810;
-  border-radius: 999px;
+  padding: 1.7rem;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
-  margin-top: 8px;
 }
 
-.progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #6366f1, #00f0ff);
-  width: 0%;
-  transition: width 0.25s;
+.feature-card:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  transform: translateY(-4px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 
-/* Utility */
-.hidden { display: none !important; }
+.feature-tech-corner {
+  position: absolute;
+  top: 14px;
+  left: 16px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  font-weight: 700;
+}
 
-.toast {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%) translateY(20px);
-  background: #0f1424;
-  border: 1px solid var(--primary);
+.feature-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  margin-bottom: 1.1rem;
+}
+
+.feature-icon-wrapper.cyan {
+  background: rgba(0, 240, 255, 0.12);
+  border: 1px solid rgba(0, 240, 255, 0.3);
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+}
+
+.feature-icon-wrapper.purple {
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  box-shadow: 0 0 15px var(--primary-glow);
+}
+
+.feature-icon-wrapper.emerald {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+}
+
+.feature-title {
+  font-size: 1.12rem;
+  font-weight: 800;
   color: #ffffff;
-  padding: 10px 18px;
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-  opacity: 0;
-  pointer-events: none;
-  transition: all 0.2s ease;
-  z-index: 100;
+  margin-bottom: 0.65rem;
 }
 
-.toast.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
+.feature-text {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 1rem;
 }
 
-footer {
-  border-top: 1px solid rgba(148, 163, 184, 0.1);
-  padding: 18px 16px;
-  background: var(--bg-header);
-  text-align: center;
-  font-size: 12px;
+.feature-metric {
+  font-size: 0.75rem;
+  color: var(--accent-cyan);
+  background: rgba(0, 240, 255, 0.08);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  display: inline-block;
+  font-weight: 600;
+}
+
+/* ================= FOOTER ================= */
+
+.site-footer {
+  margin-top: auto;
+  padding-top: 2.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  font-size: 0.85rem;
   color: var(--text-dim);
 }
-  </style>
-</head>
-<body>
 
-  <div class="mesh-bg"></div>
-
-  <!-- Header -->
-  <header>
-    <div class="header-container">
-      <div class="brand-group" onclick="switchPage('download')">
-        <div class="brand-avatar">
-          <svg viewBox="0 0 100 100" width="26" height="26">
-            <path d="M50 16 L78 30 V56 C78 72 50 84 50 84 C50 84 22 72 22 56 V30 Z" fill="none" stroke="#6366f1" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M50 26 L70 36 V54 C70 66 50 75 50 75 C50 75 30 66 30 54 V36 Z" fill="rgba(99, 102, 241, 0.25)" stroke="#00f0ff" stroke-width="3" />
-            <path d="M44 38 H54 C57 38 60 40 60 43 C60 46 57 48 54 48 H44 Z" fill="none" stroke="#ffffff" stroke-width="5" />
-            <path d="M44 38 V62" stroke="#ffffff" stroke-width="5.5" stroke-linecap="round" />
-            <path d="M52 48 L62 62" stroke="#00f0ff" stroke-width="5.5" stroke-linecap="round" />
-          </svg>
-        </div>
-        <div>
-          <div class="brand-title">
-            RAVX <span>SECURITY</span>
-            <span class="badge-v">v7.4.2</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Navigation Tabs -->
-      <nav class="nav-tabs">
-        <button class="nav-tab active" id="tab-download" onclick="switchPage('download')">
-          <span>📥 بوابة التحميل</span>
-        </button>
-        <button class="nav-tab" id="tab-encrypt" onclick="switchPage('encrypt')">
-          <span>⚡ تشفير ورفع مورد</span>
-        </button>
-        <button class="nav-tab" id="tab-library" onclick="switchPage('library')">
-          <span>🗄️ المكتبة والتراخيص</span>
-        </button>
-        <button class="nav-tab" id="tab-docs" onclick="switchPage('docs')">
-          <span>📖 دليل التركيب</span>
-        </button>
-      </nav>
-
-      <div class="server-pill">
-        <span class="status-dot"></span>
-        <span>الخادم: متصل</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Content -->
-  <main>
-    <!-- PAGE 1: DOWNLOAD & VERIFY PORTAL -->
-    <div id="page-download" class="page-section active">
-      <div class="section-header">
-        <div class="section-tag">بوابة الفحص والترخيص المعتمدة</div>
-        <h2 class="section-title">تحميل السكربتات المشفرة</h2>
-        <p class="section-subtitle">
-          أدخل كود الترخيص الخاص بسيرفرك لفحص التوقيع الرقمي وتحميل حزمة FiveM المشفرة (.ZIP) مباشرة وبأقصى سرعة.
-        </p>
-      </div>
-
-      <div class="card">
-        <form onsubmit="event.preventDefault(); verifyCode();">
-          <div class="form-group">
-            <div class="form-label">
-              <span>كود السكربت المرخص (الصيغة: RAVX-XXXXX)</span>
-              
-              <!-- Subtle quick select -->
-              <div style="position: relative;">
-                <button type="button" class="dropdown-toggle" onclick="toggleDropdown()">
-                  <span>التراخيص المسجلة</span>
-                  <span>▾</span>
-                </button>
-                <div id="codeDropdown" class="dropdown-menu">
-                  <div style="font-size: 11px; color: var(--text-muted); padding: 4px 8px; border-bottom: 1px solid rgba(255,255,255,0.06);">
-                    اختر كوداً جاهزاً:
-                  </div>
-                  <div id="dropdownItems"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="input-wrapper">
-              <input 
-                type="text" 
-                id="codeInput" 
-                class="text-input" 
-                placeholder="مثال: RAVX-DEMO1" 
-                autocomplete="off"
-                spellcheck="false"
-                value="RAVX-DEMO1"
-                oninput="this.value = this.value.toUpperCase()"
-              >
-              <button type="button" class="btn-paste" onclick="pasteClipboard()">📋 لصق</button>
-            </div>
-          </div>
-
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <button type="submit" id="submitBtn" class="btn-primary" style="flex: 1;">
-              <span id="btnText">فحص وترخيص الكود ⚡</span>
-            </button>
-            <button type="button" class="btn-secondary" onclick="switchPage('encrypt')">
-              <span>تريد تشفير سكربت جديد؟</span>
-            </button>
-          </div>
-        </form>
-
-        <!-- Scanning progress -->
-        <div id="scanningBox" class="hidden" style="margin-top: 18px; padding: 14px; background: rgba(6, 8, 16, 0.7); border-radius: var(--radius-md);">
-          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #a5b4fc; font-family: var(--font-mono);">
-            <span id="scanStatus">جاري فحص الرخصة والتوقيع الرقمي...</span>
-            <span id="scanPercent">45%</span>
-          </div>
-          <div class="progress-bar">
-            <div id="scanFill" class="progress-fill"></div>
-          </div>
-        </div>
-
-        <!-- Status message -->
-        <div id="statusMessage" class="hidden" style="margin-top: 14px; padding: 10px 14px; border-radius: var(--radius-md); font-size: 12px; text-align: center;"></div>
-      </div>
-
-      <!-- Script Details Card -->
-      <div id="scriptDetails" class="card hidden">
-        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(148, 163, 184, 0.12); padding-bottom: 14px; gap: 12px; flex-wrap: wrap;">
-          <div>
-            <h3 id="resName" style="font-size: 18px; font-weight: 800; font-family: var(--font-mono); color: #ffffff;">ravx_multicharacter_v3</h3>
-            <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
-              كود الترخيص: <span id="resCode" style="font-family: var(--font-mono); font-weight: 700; color: #818cf8;">RAVX-DEMO1</span>
-            </p>
-          </div>
-          <button type="button" class="btn-secondary" onclick="copyDirectLink()" style="padding: 6px 12px; font-size: 12px;">
-            🔗 نسخ رابط الترخيص
-          </button>
-        </div>
-
-        <!-- Meta Details Grid -->
-        <div class="details-grid">
-          <div class="meta-box">
-            <div class="meta-box-label">🌐 الآي بي المرخص</div>
-            <div id="resIp" class="meta-box-value">185.220.101.44:30120</div>
-          </div>
-          <div class="meta-box">
-            <div class="meta-box-label">🛡️ نمط التشفير</div>
-            <div id="resMode" class="meta-box-value" style="font-size: 12px; font-family: var(--font-arabic);">تشفير الملفات المستهدفة</div>
-          </div>
-          <div class="meta-box">
-            <div class="meta-box-label">📦 حجم الملف</div>
-            <div id="resSize" class="meta-box-value">42.8 MB</div>
-          </div>
-          <div class="meta-box">
-            <div class="meta-box-label">📊 عدد التحميلات</div>
-            <div id="resDownloads" class="meta-box-value">1,428 مرة</div>
-          </div>
-        </div>
-
-        <!-- SHA-256 Checksum -->
-        <div style="background: rgba(6, 8, 16, 0.5); border-radius: var(--radius-md); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); margin-bottom: 16px;">
-          <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-            <span>SHA-256: </span>
-            <span id="resChecksum" style="color: #cbd5e1;">a8f9c1b4e2d7e801b9ca4e723dfbc90172e0a4f5</span>
-          </div>
-          <button type="button" onclick="copyChecksum()" style="background: transparent; border: none; color: #a5b4fc; cursor: pointer; margin-right: 12px; white-space: nowrap;">
-            نسخ
-          </button>
-        </div>
-
-        <!-- Direct Download Button -->
-        <a id="downloadBtn" href="/api/download/RAVX-DEMO1" class="btn-primary" style="padding: 14px; text-decoration: none; font-size: 15px; margin-bottom: 12px;">
-          ⬇️ تحميل الملف المضغوط (.ZIP) الآن (<span id="dlFileName" style="font-family: var(--font-mono); font-size: 12px; font-weight: 400;">ravx_multicharacter_v3.zip</span>)
-        </a>
-
-        <!-- server.cfg helper -->
-        <div style="background: #060810; border-radius: var(--radius-md); padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-family: var(--font-mono);">
-          <div>
-            <span style="color: var(--text-dim);">server.cfg: </span>
-            <span id="resCfg" style="color: #a5b4fc; font-weight: 700;">ensure ravx_multicharacter_v3</span>
-          </div>
-          <button type="button" onclick="copyCfg()" style="padding: 4px 10px; background: rgba(255,255,255,0.08); border: none; border-radius: 6px; color: #fff; font-size: 11px; cursor: pointer;">
-            نسخ الأمر
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- PAGE 2: UPLOAD & ENCRYPT STUDIO -->
-    <div id="page-encrypt" class="page-section">
-      <div class="section-header">
-        <div class="section-tag" style="color: #67e8f9; background: rgba(6, 182, 212, 0.1); border-color: rgba(6, 182, 212, 0.2);">
-          استوديو حماية الموارد • FiveM Encryptor
-        </div>
-        <h2 class="section-title">رفع وتشفير سكربت جديد</h2>
-        <p class="section-subtitle">
-          ارفع ملفات السكربت، حدد آي بي السيرفر المصرح له بالتشغيل، واختر نمط الحماية لتوليد حزمة FiveM مشفرة وكود ترخيص معتمد فوراً.
-        </p>
-      </div>
-
-      <div class="card">
-        <form onsubmit="event.preventDefault(); startEncryption();">
-          <!-- Dropzone -->
-          <div class="upload-dropzone" onclick="document.getElementById('fileUploadInput').click()">
-            <input type="file" id="fileUploadInput" class="hidden" accept=".zip,.rar,.7z,.lua" onchange="handleFileUpload(this)">
-            <div style="font-size: 32px; margin-bottom: 8px;">📁</div>
-            <div id="dropzoneText">
-              <p style="font-size: 14px; font-weight: 700; color: #ffffff;">
-                اسحب وأفلت ملف السكربت هنا، أو <span style="color: var(--primary); text-decoration: underline;">اضغط لتصفح جهازك</span>
-              </p>
-              <p style="font-size: 11px; color: var(--text-dim); margin-top: 4px;">
-                يدعم حزم (.ZIP) ومجلدات FiveM
-              </p>
-            </div>
-          </div>
-
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-top: 18px;">
-            <div class="form-group">
-              <label class="form-label">اسم المورد (Resource Name)</label>
-              <input type="text" id="encResourceName" class="text-input" style="padding-left: 14px;" placeholder="مثال: qb-banking أو ravx_hud" required>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">الآي بي والبورت المرخص (IP:Port)</label>
-              <input type="text" id="encTargetIp" class="text-input" style="padding-left: 14px;" placeholder="مثال: 185.220.101.44:30120" required>
-            </div>
-          </div>
-
-          <!-- Encryption Mode Selection -->
-          <div class="form-group">
-            <label class="form-label">نمط التشفير والحماية</label>
-            <div class="mode-grid">
-              <div class="mode-card selected" id="mode-target" onclick="selectMode('target')">
-                <div class="mode-card-title">🛡️ تشفير مستهدف (موصى به)</div>
-                <div class="mode-card-desc">تشفير ملفات الكلاينت والسيرفر مع إبقاء ملفات الـ config.lua مفتوحة للتعديل.</div>
-              </div>
-              <div class="mode-card" id="mode-full" onclick="selectMode('full')">
-                <div class="mode-card-title">📦 تشفير شامل (Bytecode)</div>
-                <div class="mode-card-desc">تحويل جميع ملفات الـ Lua إلى بايت كود مشفر لمنع الفك والسرقة بنسبة 100%.</div>
-              </div>
-              <div class="mode-card" id="mode-none" onclick="selectMode('none')">
-                <div class="mode-card-title">🔓 قفل بالـ IP فقط</div>
-                <div class="mode-card-desc">ربط السكربت بآي بي السيرفر مع إبقاء الشفرات مفتوحة للمطورين.</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Toggles -->
-          <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; font-size: 12px; color: var(--text-muted);">
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="antiDump" checked>
-              <span>منع الدامب وتفريغ الذاكرة (Anti-Dump)</span>
-            </label>
-            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
-              <input type="checkbox" id="hwidLock" checked>
-              <span>قفل عتاد السيرفر (HWID Lock)</span>
-            </label>
-          </div>
-
-          <button type="submit" id="encBtn" class="btn-primary">
-            ⚡ بدء التشفير وتوليد كود الترخيص
-          </button>
-        </form>
-
-        <!-- Encryption Result Box -->
-        <div id="encResult" class="hidden" style="margin-top: 24px; padding: 20px; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: var(--radius-md);">
-          <div style="text-align: center; margin-bottom: 16px;">
-            <div style="font-size: 28px;">✅</div>
-            <h4 style="font-size: 16px; font-weight: 700; color: #ffffff;">تم تشفير السكربت وتوليد الترخيص بنجاح!</h4>
-          </div>
-
-          <div style="display: flex; align-items: center; justify-content: space-between; background: #060810; padding: 12px 16px; border-radius: var(--radius-md); margin-bottom: 14px;">
-            <div>
-              <div style="font-size: 11px; color: var(--text-muted);">كود الترخيص المولد:</div>
-              <div id="genEncCode" style="font-size: 20px; font-weight: 800; font-family: var(--font-mono); color: #818cf8;">RAVX-XXXXX</div>
-            </div>
-            <button type="button" class="btn-secondary" onclick="copyGenCode()" style="padding: 6px 12px; font-size: 12px;">
-              نسخ الكود
-            </button>
-          </div>
-
-          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <a id="encDownloadLink" href="#" class="btn-primary" style="flex: 1; text-decoration: none;">
-              ⬇️ تحميل الحزمة المشفرة (.ZIP)
-            </a>
-            <button type="button" class="btn-secondary" onclick="openGenInDownload()">
-              فتح في بوابة التحميل ➔
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PAGE 3: SCRIPT LIBRARY -->
-    <div id="page-library" class="page-section">
-      <div class="section-header">
-        <div class="section-tag">مستودع الموارد المعتمدة</div>
-        <h2 class="section-title">المكتبة والتراخيص المشفرة</h2>
-        <p class="section-subtitle">
-          استعرض جميع الموارد المشفرة المسجلة في خادم RAVX، مع إمكانية الفحص والتحميل المباشر.
-        </p>
-      </div>
-
-      <div class="library-grid" id="libraryCards">
-        <!-- Injected via JS -->
-      </div>
-    </div>
-
-    <!-- PAGE 4: DOCUMENTATION & GUIDE -->
-    <div id="page-docs" class="page-section">
-      <div class="section-header">
-        <div class="section-tag">وثائق نظام التشفير</div>
-        <h2 class="section-title">دليل تركيب وتشغيل السكربتات</h2>
-        <p class="section-subtitle">
-          خطوات سريعة لتركيب وتشغيل الموارد المشفرة على سيرفر FiveM بنجاح.
-        </p>
-      </div>
-
-      <div class="card" style="space-y: 16px;">
-        <div style="margin-bottom: 18px;">
-          <h4 style="font-size: 14px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 8px;">
-            <span style="background: var(--primary); color: #fff; padding: 2px 8px; border-radius: 6px; font-size: 11px;">01</span>
-            فك ضغط المورد داخل مجلد resources
-          </h4>
-          <p style="font-size: 12px; color: var(--text-muted); margin: 6px 32px 0 0; line-height: 1.5;">
-            ضع مجلد السكربت داخل مسار <code>txData/[profile]/resources/[اسم_المورد]</code> بعد تحميله من البوابة.
-          </p>
-        </div>
-
-        <div style="margin-bottom: 18px;">
-          <h4 style="font-size: 14px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 8px;">
-            <span style="background: var(--primary); color: #fff; padding: 2px 8px; border-radius: 6px; font-size: 11px;">02</span>
-            إضافة أمر التشغيل في ملف server.cfg
-          </h4>
-          <p style="font-size: 12px; color: var(--text-muted); margin: 6px 32px 0 0; line-height: 1.5;">
-            افتح ملف server.cfg وأضف السطر: <code>ensure [اسم_المورد]</code>
-          </p>
-        </div>
-
-        <div>
-          <h4 style="font-size: 14px; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 8px;">
-            <span style="background: var(--primary); color: #fff; padding: 2px 8px; border-radius: 6px; font-size: 11px;">03</span>
-            مطابقة الآي بي (Server IP Lock)
-          </h4>
-          <p style="font-size: 12px; color: var(--text-muted); margin: 6px 32px 0 0; line-height: 1.5;">
-            يقوم نظام الحماية بمطابقة الآي بي الخارجي للسيرفر مع الآي بي المسجل في الرخصة لضمان عدم تسريب السكربت.
-          </p>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <!-- Footer -->
-  <footer>
-    <div style="max-width: 960px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: gap: 10px;">
-      <div>RAVX SECURITY SYSTEMS • بروتوكول حماية سكربتات FiveM المعتمد</div>
-      <div>v7.4.2 Production Build</div>
-    </div>
-  </footer>
-
-  <!-- Toast -->
-  <div id="toast" class="toast">تم النسخ بنجاح!</div>
-
-  <script>
-    // Database of known scripts
-    const SCRIPTS_DB = {
-      'RAVX-DEMO1': {
-        code: 'RAVX-DEMO1',
-        resourceName: 'ravx_multicharacter_v3',
-        title: 'RAVX MultiCharacter V3',
-        targetIp: '185.220.101.44:30120',
-        encryptionMode: 'target',
-        fileSize: 44879052,
-        downloads: 1428,
-        checksum: 'a8f9c1b4e2d7e801b9ca4e723dfbc90172e0a4f5',
-        originalFilename: 'ravx_multicharacter_v3.zip'
-      },
-      'RAVX-HUD02': {
-        code: 'RAVX-HUD02',
-        resourceName: 'ravx_cyber_hud_ultra',
-        title: 'RAVX Cyber HUD Ultra',
-        targetIp: '194.147.122.88:30120',
-        encryptionMode: 'full',
-        fileSize: 19293798,
-        downloads: 890,
-        checksum: 'c4e2a8719b0d3f2810a9c8b74e612f0a1c2e9b81',
-        originalFilename: 'ravx_cyber_hud_ultra.zip'
-      },
-      'RAVX-MDT99': {
-        code: 'RAVX-MDT99',
-        resourceName: 'ravx_police_mdt_cad',
-        title: 'RAVX Police MDT & CAD System',
-        targetIp: '51.89.14.210:30120',
-        encryptionMode: 'none',
-        fileSize: 67318579,
-        downloads: 620,
-        checksum: 'f1e09c8d7b6a5f4e3d2c1b0a987654321fedcba0',
-        originalFilename: 'ravx_police_mdt_cad.zip'
-      }
-    };
-
-    let currentMode = 'target';
-    let activeScript = null;
-    let lastGeneratedCode = '';
-
-    // Switch Page Tabs
-    function switchPage(pageId) {
-      document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
-
-      const targetPage = document.getElementById('page-' + pageId);
-      const targetTab = document.getElementById('tab-' + pageId);
-
-      if (targetPage) targetPage.classList.add('active');
-      if (targetTab) targetTab.classList.add('active');
-
-      if (pageId === 'library') renderLibrary();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // Dropdown toggle
-    function toggleDropdown() {
-      const dd = document.getElementById('codeDropdown');
-      dd.classList.toggle('show');
-    }
-
-    window.addEventListener('click', (e) => {
-      if (!e.target.closest('.dropdown-toggle') && !e.target.closest('.dropdown-menu')) {
-        const dd = document.getElementById('codeDropdown');
-        if (dd) dd.classList.remove('show');
-      }
-    });
-
-    function renderDropdownItems() {
-      const container = document.getElementById('dropdownItems');
-      if (!container) return;
-      container.innerHTML = '';
-      Object.values(SCRIPTS_DB).forEach(s => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'dropdown-item';
-        btn.innerHTML = `
-          <span style="font-family: var(--font-mono); font-weight: 700; color: #818cf8;">${s.code}</span>
-          <span style="color: var(--text-muted); font-size: 11px;">${s.resourceName}</span>
-        `;
-        btn.onclick = () => {
-          document.getElementById('codeInput').value = s.code;
-          toggleDropdown();
-          verifyCode();
-        };
-        container.appendChild(btn);
-      });
-    }
-
-    // Verify Code
-    async function verifyCode() {
-      const codeInput = document.getElementById('codeInput');
-      const submitBtn = document.getElementById('submitBtn');
-      const btnText = document.getElementById('btnText');
-      const scanningBox = document.getElementById('scanningBox');
-      const scriptDetails = document.getElementById('scriptDetails');
-      const statusMessage = document.getElementById('statusMessage');
-
-      const code = (codeInput.value || '').trim().toUpperCase();
-      if (!code) {
-        showStatus('يرجى إدخال كود السكربت أولاً', 'error');
-        return;
-      }
-
-      statusMessage.classList.add('hidden');
-      scriptDetails.classList.add('hidden');
-      scanningBox.classList.remove('hidden');
-      submitBtn.disabled = true;
-      btnText.textContent = 'جاري الفحص...';
-
-      // Animate progress
-      let p = 15;
-      const fill = document.getElementById('scanFill');
-      const pText = document.getElementById('scanPercent');
-      const sStatus = document.getElementById('scanStatus');
-      
-      const interval = setInterval(() => {
-        p += 20;
-        if (p > 90) p = 90;
-        fill.style.width = p + '%';
-        pText.textContent = p + '%';
-      }, 100);
-
-      try {
-        let script = null;
-        try {
-          const res = await fetch('/api/script/' + encodeURIComponent(code));
-          if (res.ok) {
-            const data = await res.json();
-            if (data.success) script = data.script;
-          }
-        } catch {}
-
-        if (!script) {
-          script = SCRIPTS_DB[code];
-          if (!script && (code.startsWith('RAVX-') || code.length >= 6)) {
-            const clean = code.replace(/[^A-Z0-9]/g, '').toLowerCase();
-            script = {
-              code: code,
-              resourceName: 'ravx_' + clean + '_resource',
-              title: 'RAVX ' + code,
-              targetIp: '185.220.101.44:30120',
-              encryptionMode: 'target',
-              fileSize: 38400000,
-              downloads: 124,
-              checksum: clean.padEnd(40, 'a'),
-              originalFilename: 'ravx_' + clean + '.zip'
-            };
-            SCRIPTS_DB[code] = script;
-          }
-        }
-
-        clearInterval(interval);
-        fill.style.width = '100%';
-        pText.textContent = '100%';
-
-        if (!script) {
-          throw new Error('الكود غير صحيح أو غير مسجل في قاعدة ترخيص RAVX');
-        }
-
-        setTimeout(() => {
-          scanningBox.classList.add('hidden');
-          submitBtn.disabled = false;
-          btnText.textContent = 'فحص وترخيص الكود ⚡';
-          displayScript(script);
-        }, 250);
-
-      } catch (err) {
-        clearInterval(interval);
-        scanningBox.classList.add('hidden');
-        submitBtn.disabled = false;
-        btnText.textContent = 'فحص وترخيص الكود ⚡';
-        showStatus(err.message, 'error');
-      }
-    }
-
-    function displayScript(s) {
-      activeScript = s;
-      document.getElementById('resName').textContent = s.resourceName;
-      document.getElementById('resCode').textContent = s.code;
-      document.getElementById('resIp').textContent = s.targetIp;
-      
-      const modes = {
-        target: 'تشفير الملفات المستهدفة (Client / Server)',
-        full: 'تشفير كامل لجميع ملفات Lua (Bytecode)',
-        none: 'قفل بالـ IP ومطابقة الخادم (بدون تشفير)'
-      };
-      document.getElementById('resMode').textContent = modes[s.encryptionMode] || s.encryptionMode;
-      
-      const bytes = s.fileSize || 35000000;
-      const sizeStr = bytes > 1024 * 1024 ? (bytes / (1024 * 1024)).toFixed(1) + ' MB' : (bytes / 1024).toFixed(1) + ' KB';
-      document.getElementById('resSize').textContent = sizeStr;
-      document.getElementById('resDownloads').textContent = (s.downloads || 1) + ' مرة';
-      document.getElementById('resChecksum').textContent = s.checksum || 'a8f9c1b4e2d7e801b9ca4e723dfbc90172e0a4f5';
-      document.getElementById('dlFileName').textContent = s.originalFilename || s.resourceName + '.zip';
-      document.getElementById('resCfg').textContent = 'ensure ' + s.resourceName;
-      document.getElementById('downloadBtn').href = '/api/download/' + encodeURIComponent(s.code);
-
-      document.getElementById('scriptDetails').classList.remove('hidden');
-      showToast('تم تأكيد ترخيص السكربت بنجاح!');
-    }
-
-    function showStatus(msg, type) {
-      const el = document.getElementById('statusMessage');
-      el.textContent = msg;
-      el.style.background = type === 'error' ? 'rgba(244, 63, 94, 0.15)' : 'rgba(16, 185, 129, 0.15)';
-      el.style.color = type === 'error' ? '#fda4af' : '#6ee7b7';
-      el.style.border = type === 'error' ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)';
-      el.classList.remove('hidden');
-    }
-
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.classList.add('show');
-      setTimeout(() => t.classList.remove('show'), 2500);
-    }
-
-    function pasteClipboard() {
-      if (navigator.clipboard && navigator.clipboard.readText) {
-        navigator.clipboard.readText().then(text => {
-          if (text) {
-            document.getElementById('codeInput').value = text.trim().toUpperCase();
-            verifyCode();
-          }
-        });
-      } else {
-        showToast('يرجى لصق الكود يدوياً');
-      }
-    }
-
-    function copyChecksum() {
-      if (activeScript) {
-        navigator.clipboard.writeText(activeScript.checksum);
-        showToast('تم نسخ الهاش SHA-256');
-      }
-    }
-
-    function copyCfg() {
-      if (activeScript) {
-        navigator.clipboard.writeText('ensure ' + activeScript.resourceName);
-        showToast('تم نسخ أمر server.cfg!');
-      }
-    }
-
-    function copyDirectLink() {
-      if (activeScript) {
-        const url = window.location.origin + window.location.pathname + '?code=' + encodeURIComponent(activeScript.code);
-        navigator.clipboard.writeText(url);
-        showToast('تم نسخ رابط الترخيص المباشر!');
-      }
-    }
-
-    // Encrypt Studio Actions
-    function selectMode(m) {
-      currentMode = m;
-      document.querySelectorAll('.mode-card').forEach(el => el.classList.remove('selected'));
-      document.getElementById('mode-' + m).classList.add('selected');
-    }
-
-    function handleFileUpload(input) {
-      if (input.files && input.files[0]) {
-        const file = input.files[0];
-        const resInput = document.getElementById('encResourceName');
-        if (!resInput.value) {
-          resInput.value = file.name.replace(/\.[^/.]+$/, '').toLowerCase().replace(/[^a-z0-9_]/g, '_');
-        }
-        document.getElementById('dropzoneText').innerHTML = `
-          <p style="font-size: 14px; font-weight: 700; color: #34d399;">✓ تم اختيار: ${file.name}</p>
-          <p style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">اضغط لاختيار ملف آخر</p>
-        `;
-      }
-    }
-
-    async function startEncryption() {
-      const name = document.getElementById('encResourceName').value.trim();
-      const ip = document.getElementById('encTargetIp').value.trim();
-      const btn = document.getElementById('encBtn');
-
-      if (!name || !ip) {
-        showToast('يرجى تعبئة اسم المورد والآي بي أولاً');
-        return;
-      }
-
-      btn.disabled = true;
-      btn.textContent = 'جاري التشفير وحقن الحماية...';
-
-      const randSuffix = Math.random().toString(36).substring(2, 7).toUpperCase();
-      const code = 'RAVX-' + randSuffix;
-      const checksum = Math.random().toString(16).substring(2) + Math.random().toString(16).substring(2);
-
-      const payload = {
-        resourceName: name,
-        targetIp: ip,
-        encryptionMode: currentMode,
-        customCode: code,
-        hardwareLock: document.getElementById('hwidLock').checked,
-        antiDump: document.getElementById('antiDump').checked
-      };
-
-      try {
-        await fetch('/api/encrypt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-      } catch {}
-
-      const newScript = {
-        code: code,
-        resourceName: name,
-        title: 'RAVX ' + name + ' [Protected]',
-        targetIp: ip,
-        encryptionMode: currentMode,
-        fileSize: 31400000,
-        downloads: 0,
-        checksum: checksum,
-        originalFilename: name + '.zip'
-      };
-
-      SCRIPTS_DB[code] = newScript;
-      lastGeneratedCode = code;
-
-      setTimeout(() => {
-        btn.disabled = false;
-        btn.textContent = '⚡ بدء التشفير وتوليد كود الترخيص';
-        document.getElementById('genEncCode').textContent = code;
-        document.getElementById('encDownloadLink').href = '/api/download/' + encodeURIComponent(code);
-        document.getElementById('encResult').classList.remove('hidden');
-        renderDropdownItems();
-        showToast('تم تشفير المورد بنجاح!');
-      }, 700);
-    }
-
-    function copyGenCode() {
-      if (lastGeneratedCode) {
-        navigator.clipboard.writeText(lastGeneratedCode);
-        showToast('تم نسخ الكود: ' + lastGeneratedCode);
-      }
-    }
-
-    function openGenInDownload() {
-      if (lastGeneratedCode) {
-        switchPage('download');
-        document.getElementById('codeInput').value = lastGeneratedCode;
-        verifyCode();
-      }
-    }
-
-    // Library page
-    function renderLibrary() {
-      const container = document.getElementById('libraryCards');
-      if (!container) return;
-      container.innerHTML = '';
-
-      Object.values(SCRIPTS_DB).forEach(s => {
-        const card = document.createElement('div');
-        card.className = 'lib-card';
-        card.innerHTML = `
-          <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-family: var(--font-mono); font-size: 11px; font-weight: 700; color: #818cf8; background: rgba(99,102,241,0.12); padding: 2px 6px; border-radius: 4px;">
-                ${s.code}
-              </span>
-              <span style="font-size: 11px; color: var(--text-dim); font-family: var(--font-mono);">${(s.fileSize / (1024*1024)).toFixed(1)} MB</span>
-            </div>
-            <h4 style="font-size: 14px; font-weight: 700; color: #fff; font-family: var(--font-mono); margin-bottom: 4px;">
-              ${s.resourceName}
-            </h4>
-            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 2px;">
-              🌐 ${s.targetIp}
-            </div>
-          </div>
-          <div style="display: flex; gap: 8px; border-top: 1px solid rgba(148, 163, 184, 0.1); padding-top: 10px;">
-            <button class="btn-secondary" style="flex: 1; padding: 6px; font-size: 11px;" onclick="loadAndVerify('${s.code}')">
-              فحص وتحميل ➔
-            </button>
-            <a href="/api/download/${encodeURIComponent(s.code)}" class="btn-secondary" style="padding: 6px 10px; font-size: 12px; text-decoration: none;" title="تحميل مباشر">
-              ⬇️
-            </a>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    }
-
-    function loadAndVerify(code) {
-      switchPage('download');
-      document.getElementById('codeInput').value = code;
-      verifyCode();
-    }
-
-    // Initialize on load
-    window.addEventListener('DOMContentLoaded', () => {
-      renderDropdownItems();
-
-      // Check URL search params
-      const params = new URLSearchParams(window.location.search);
-      const c = params.get('code') || params.get('c');
-      const p = params.get('page') || params.get('tab');
-
-      if (p) switchPage(p);
-      if (c) {
-        document.getElementById('codeInput').value = c.toUpperCase();
-        verifyCode();
-      } else {
-        verifyCode();
-      }
-    });
-  </script>
-</body>
-</html>
+.footer-brand-title {
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 1px;
+  display: block;
+  margin-bottom: 0.2rem;
+}
+
+.footer-links-group {
+  display: flex;
+  gap: 0.9rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.footer-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #c7d2fe;
+  text-decoration: none;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s;
+}
+
+.footer-link-btn:hover {
+  background: rgba(99, 102, 241, 0.25);
+  color: #ffffff;
+  border-color: var(--accent-cyan);
+  transform: translateY(-1px);
+}
+
+.footer-divider {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+/* ================= TOAST NOTIFICATION ================= */
+
+.cyber-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(30px);
+  background: #0f172a;
+  border: 1.5px solid var(--primary);
+  color: #ffffff;
+  padding: 0.85rem 1.6rem;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px var(--primary-glow);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.cyber-toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+/* ================= UTILITY & RESPONSIVE ================= */
+
+.hidden {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .hero-title {
+    font-size: 1.85rem;
+  }
+  
+  .input-group-row {
+    flex-direction: column;
+  }
+  
+  .btn-primary {
+    padding: 0.95rem;
+    justify-content: center;
+  }
+  
+  .details-bento-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .features-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .footer-inner {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
