@@ -23,13 +23,13 @@ const db = require('./src/database/db');
 const { createServer } = require('./src/server/server');
 
 // ==================== إعدادات النظام ====================
-const TOKEN = process.env.DISCORD_BOT_TOKEN || 'MTU0MzI3NTI0Mjc2MjQwNzk1OA.G9dJie.0HAwn6WLXMbXOEQZHQ1Jh9TvTy0kMnyBfXSdg4';
+const TOKEN = process.env.DISCORD_BOT_TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID || '1543275242762407958';
 const PANEL_CHANNEL_ID = process.env.PANEL_CHANNEL_ID || '1545704301605945354';
 const ADMIN_PANEL_CHANNEL_ID = process.env.ADMIN_PANEL_CHANNEL_ID || '1545524543903367318';
 const PRICING_CHANNEL_ID = process.env.PRICING_CHANNEL_ID || '1545526903052435476';
 const GRANT_PERMISSION_ROLE_ID = process.env.GRANT_PERMISSION_ROLE_ID || '1509455687934283776';
-const WEBHOOK_URL = process.env.WEBHOOK_URL || "https://discord.com/api/webhooks/1543224732806160414/UTWZ3ksAWbMI0uMyENCNT2Qh7N5ZBnmRAfkCwzQeZTW7adznDgMJNPeDsqw3ZEjFtkNH"; 
+const WEBHOOK_URL = process.env.WEBHOOK_URL || "";
 
 const PORT = process.env.PORT || 3000;
 const BASE_URL = process.env.BASE_URL || "https://ravx.onrender.com";
