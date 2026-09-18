@@ -4,6 +4,7 @@ const os = require('os');
 const crypto = require('crypto');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
+const {ZipArchive} = require('archiver');
 const db = require('../database/db');
 const execFileAsync = promisify(execFile);
 
@@ -41,6 +42,21 @@ async function walkAndProtect(root, targetIp, resourceName, mode) {
   }
 }
 
+function createZipFromDirectory(sourceDir, outputPath) {
+  return new Promise((resolve, reject) => {
+    const output = fs.createWriteStream(outputPath);
+    const archive = new ZipArchive({zlib: {level: 0}});
+    let done = false;
+    const fail = error => { if (!done) { done = true; reject(error); } };
+    output.on('close', () => { if (!done) { done = true; resolve(); } });
+    output.on('error', fail);
+    archive.on('error', fail);
+    archive.pipe(output);
+    archive.directory(sourceDir, false);
+    archive.finalize().catch(fail);
+  });
+}
+
 async function encryptResource({inputZipPath, targetIp, resourceName, encryptionMode = 'target', uploader = {}}) {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'ravx-engine-'));
   const extracted = path.join(work, 'resource');
@@ -55,7 +71,7 @@ async function encryptResource({inputZipPath, targetIp, resourceName, encryption
     await walkAndProtect(processRoot, targetIp, resourceName, encryptionMode);
     fs.mkdirSync(path.dirname(outputPath), {recursive: true});
     if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
-    await execFileAsync('zip', ['-q', '-r', '-0', outputPath, '.'], {cwd: extracted, maxBuffer: 1024 * 1024});
+    await createZipFromDirectory(extracted, outputPath);
     const stat = fs.statSync(outputPath);
     const script = db.saveScript({title: resourceName, originalFilename: outputName, savedFilename: outputName, fileSize: stat.size, targetIp, resourceName, encryptionMode, uploaderName: uploader.name || 'Web User', uploaderId: uploader.id || null});
     return {script};
