@@ -5,16 +5,13 @@ const crypto = require('crypto');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
 const {ZipArchive} = require('archiver');
-const db = require('../database/db');
+let db;
+try {
+  db = require('../database/db');
+} catch (_) {
+  db = require(path.join(process.cwd(), 'src/database/db'));
+}
 const execFileAsync = promisify(execFile);
-
-function luaQuote(value) {
-  return String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\r/g, '\\r').replace(/\n/g, '\\n');
-}
-
-function buildProtectionCode(targetIp, resourceName) {
-  return `-- RAVX license guard\nCitizen.CreateThread(function()\n  Citizen.Wait(1000)\n  local expected = "${luaQuote(resourceName)}"\n  local current = GetCurrentResourceName()\n  if current ~= expected then StopResource(current) return end\n  local checked, allowed = false, false\n  PerformHttpRequest("https://api.ipify.org", function(code, body)\n    if code == 200 and body then allowed = body:gsub("%s+", "") == "${luaQuote(targetIp)}" end\n    checked = true\n  end, "GET", "")\n  local waited = 0\n  while not checked and waited < 80 do Citizen.Wait(100) waited = waited + 1 end\n  if not allowed then StopResource(current) end\nend)\n`;
-}
 
 function obfuscateLua(source, label) {
   const k1 = crypto.randomInt(30, 230), k2 = crypto.randomInt(30, 230), mul = [3,5,7,9,11,13][crypto.randomInt(0,6)];
@@ -33,11 +30,9 @@ async function walkAndProtect(root, targetIp, resourceName, mode) {
     if (entry.isDirectory()) await walkAndProtect(full, targetIp, resourceName, mode);
     else if (entry.isFile() && path.extname(entry.name).toLowerCase() === '.lua') {
       const base = path.basename(entry.name, '.lua').toLowerCase();
-      const guarded = base.includes('server') || base.includes('main');
       const selected = mode === 'full' || (mode === 'target' && (base.includes('client') || base.includes('server') || base.includes('script') || base.includes('main')));
       const source = fs.readFileSync(full, 'utf8');
-      const merged = guarded ? buildProtectionCode(targetIp, resourceName) + '\n' + source : source;
-      fs.writeFileSync(full, (selected || guarded) ? obfuscateLua(merged, entry.name) : merged, 'utf8');
+      fs.writeFileSync(full, selected ? obfuscateLua(source, entry.name) : source, 'utf8');
     }
   }
 }
@@ -57,7 +52,18 @@ function createZipFromDirectory(sourceDir, outputPath) {
   });
 }
 
-async function encryptResource({inputZipPath, targetIp, resourceName, encryptionMode = 'target', uploader = {}}) {
+async function notifyDiscord({channelId, botToken, script, uploader}) {
+  if (!channelId || !botToken) return;
+  try {
+    await fetch(`https://discord.com/api/v10/channels/${channelId}/messages`, {
+      method: 'POST',
+      headers: {'Authorization': `Bot ${botToken}`, 'Content-Type': 'application/json'},
+      body: JSON.stringify({content: `✅ تم تشفير المورد بنجاح\n📦 المورد: \`${script.resourceName}\`\n🌐 IP: \`${script.targetIp}\`\n🔐 النمط: \`${script.encryptionMode}\`\n🔑 كود التحميل: \`${script.code}\``})
+    });
+  } catch (error) { console.error('[WEB] Discord notification failed:', error.message); }
+}
+
+async function encryptResource({inputZipPath, targetIp, resourceName, encryptionMode = 'target', uploader = {}, panelChannelId = process.env.PANEL_CHANNEL_ID, botToken = process.env.DISCORD_BOT_TOKEN}) {
   const work = fs.mkdtempSync(path.join(os.tmpdir(), 'ravx-engine-'));
   const extracted = path.join(work, 'resource');
   const outputName = `RAVX_Secured_${resourceName}_${String(targetIp).replace(/[^a-zA-Z0-9_-]/g, '_')}.zip`;
@@ -74,6 +80,7 @@ async function encryptResource({inputZipPath, targetIp, resourceName, encryption
     await createZipFromDirectory(extracted, outputPath);
     const stat = fs.statSync(outputPath);
     const script = db.saveScript({title: resourceName, originalFilename: outputName, savedFilename: outputName, fileSize: stat.size, targetIp, resourceName, encryptionMode, uploaderName: uploader.name || 'Web User', uploaderId: uploader.id || null});
+    await notifyDiscord({channelId: panelChannelId, botToken, script, uploader});
     return {script};
   } finally {
     fs.rmSync(work, {recursive: true, force: true});
